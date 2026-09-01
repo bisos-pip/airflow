@@ -1,0 +1,96 @@
+#+title: Work Plan
+#+DATE: <2026-06-10 Wed 13:54>
+#+AUTHOR: Mohsen BANAN
+#+OPTIONS: toc:4
+#+TAGS: me ai aiAndMe
+
+# Provenance (installed once by startAiActivity.cs --- not regenerated):
+#   Date:      2026-07-28T12:48:38-07:00
+#   User:      bystar
+#   Templates: /bisos/apps/defaults/ai-templates
+#   Command:   /bisos/venv/py3/devbin/startAiActivity.cs -i initiateSub --activity=graphviz-pcs
+
+####+BEGIN: b:ai:file/particulars
+* AI Working Context
+  Working Directory: /bisos/git/auth/bxRepos/bisos-pip/startAiActivity/py3/images
+  File: /bisos/git/auth/bxRepos/bisos-pip/startAiActivity/py3/images/AI-WorkPlan.org
+  Activity: graphviz-pcs
+  Companion Docs: AI-Activity.org, AI-DevStatus.org
+####+END:
+
+This Work Plan file drives the AI collaborative development.
+Interactions are broken down into "Stages". Each Stage has a set
+of TODOs that I work with Claude to accomplish.
+
+Note to a fresh Claude: read this file together with AI-WORKFLOW.org,
+AI-Activity.org and AI-DevStatus.org to orient yourself. The =<<Context Confirmation>>=
+TODO below is the standard first step, or use =/bx-confirm0= as the automated equivalent.
+TODOs tagged =:ai:= are assigned to Claude. After completing a TODO, summarize results
+under =----- AI Results: ------= and mark it DONE.
+
+* Stage 0: Confirm AI's Understanding of This Repo's Context
+
+Goal: Confirm AI's understanding of the context and capture that in [[Context Confirmation]] TODO.
+
+
+* Stage 0 TODOs
+** +
+** TODO [#A] <<Context Confirmation>> for AI (typically triggered by /bx-confirm0) :aiAndMe:
+SCHEDULED: <2026-06-09 Tue>
+Must be repeated each time a new Claude instance is started here.
+Based on the series of files starting from CLAUDE.md in this repo,
+describe succinctly what you have understood.
+Enumerate explicitly which files you have imported and which you have considered.
+Prompt the user to confirm that the desired/appropriate model (/model) is being used for this project.
+----- AI Results: ------
+** -
+
+* Stage 1: Capture the flow of Airflow installatation as graphviz.pcs
+
+Goal: Capture the flow of installation for airflow systemd in ./airflow-graphviz.pcs
+
+
+* Stage 1 TODOs
+** +
+** DONE [#A] Create a layered figure that shows the Capability Materialization for Airflow
+SCHEDULED: <2026-09-01 Tue 14:04>
+On the top is:
+       /bisos/platform/sys/cbm/collective/hereWeb/airflow/cbmProc.spcs
+Then we have /bisos/git/bxRepos/bisos-pip/airflow/py3/bin/airflow-cbs.pcs
+Under that
+   - airlow-sbom.pcs
+   - we have 4 -sysd.pcs
+   - Assemble
+Under that we have:
+   - airflowAdmin.cs
+===== This Figure is then added to README.org
+----- AI Results: ------
+Created =py3/images/airflow-graphviz.pcs= (modeled on the sibling
+=containerProc-graphviz.pcs=), defining a =graphviz.Digraph= function
+=airflowCapabilityMaterialization()= with a top-down (TB) 4-layer figure:
+(1) CBM pointer leaf =cbmProc.spcs= (realm=collective,
+capabilityType=hereWeb, capabilityName=airflow); (2) CBS
+=airflow-cbs.pcs=, connected from CBM via a dashed "points to (no
+duplication)" edge; (3) the bundle contents CBS declares --
+=airflow-sbom.pcs=, the 4 =airflow-*-sysd.pcs= units (db-migrate ordered
+before webserver/scheduler/triggerer via dotted Requires/After edges),
+and =airflow-assemble.cs=; (4) =airflowAdmin.cs= at the bottom as the
+day-to-day admin CS run against the materialized units.
+
+Actually ran =./airflow-graphviz.pcs --format=all -i ngProcess all= --
+=bisos.graphviz='s seed framework and the =graphviz= package are
+available in this environment -- and it rendered successfully, producing
+=airflowCapabilityMaterialization.{gv,pdf,svg,odg,jpg,png,title,caption}=
+in =py3/images/=.
+
+Added a new =* Capability Materialization= section to =README.org=
+(right after the Overview's carry-over note) with the figure link
+=[[file:py3/images/airflowCapabilityMaterialization.png]]=, a short
+explanation of the four layers, and the regeneration command.
+----- AI Results: ------
+** -
+
+# Local Variables:
+# eval: (setq-local toc-org-max-depth 4)
+# eval: (setq-local org-log-done 'time)
+# End:

@@ -1,0 +1,82 @@
+#+title: Work Plan
+#+DATE: <2026-06-10 Wed 13:54>
+#+AUTHOR: Mohsen BANAN
+#+OPTIONS: toc:4
+#+TAGS: me ai aiAndMe
+
+# Provenance (installed once by aiActivity.cs --- not regenerated):
+#   Date:      2026-09-01T14:21:18-07:00
+#   User:      bystar
+#   Templates: /bisos/git/auth/bxRepos/bisos/defaults/ai-templates
+#   Command:   /bisos/venv/py3/devbin/aiActivity.cs -i initiateSub --activity=blee-panels
+
+####+BEGIN: b:ai:file/particulars
+* AI Working Context
+  Working Directory: /bisos/git/auth/bxRepos/bisos-pip/airflow/py3/panels/bisos.airflow
+  File: /bisos/git/auth/bxRepos/bisos-pip/airflow/py3/panels/bisos.airflow/AI-WorkPlan.org
+  Activity: blee-panels
+  Companion Docs: AI-Activity.org, AI-DevStatus.org
+####+END:
+
+This Work Plan file drives the AI collaborative development.
+Interactions are broken down into "Stages". Each Stage has a set
+of TODOs that I work with Claude to accomplish.
+
+Note to a fresh Claude: read this file together with AI-WORKFLOW.org,
+AI-Activity.org and AI-DevStatus.org to orient yourself. The =<<Context Confirmation>>=
+TODO below is the standard first step, or use =/bx-confirm0= as the automated equivalent.
+TODOs tagged =:ai:= are assigned to Claude. After completing a TODO, summarize results
+under =----- AI Results: ------= and mark it DONE.
+
+* Stage 0: Confirm AI's Understanding of This Repo's Context
+
+Goal: Confirm AI's understanding of the context and capture that in [[Context Confirmation]] TODO.
+
+
+* Stage 0 TODOs
+** +
+** TODO [#A] <<Context Confirmation>> for AI (typically triggered by /bx-confirm0) :aiAndMe:
+SCHEDULED: <2026-06-09 Tue>
+Must be repeated each time a new Claude instance is started here.
+Based on the series of files starting from CLAUDE.md in this repo,
+describe succinctly what you have understood.
+Enumerate explicitly which files you have imported and which you have considered.
+Prompt the user to confirm that the desired/appropriate model (/model) is being used for this project.
+----- AI Results: ------
+** -
+
+* Stage 1: Maintain and Improve the panels
+
+Goal: Maintain and Improve the panels
+
+
+* Stage 1 TODOs
+** +
+** DONE [#A] Have a ./serverSetup/ Options intro followed by our own systemd setup
+SCHEDULED: <2026-06-09 Tue>
+In ./serverSetup/_nodeBase_/fullUsagePanel-en.org create a table of rows
+being  small-dev   standalone  largescale
+columns being userSelf, systemd, container
+And then point to systemd+standalone being what we have for airflow.here
+Then explain the 4 systemd-s and the db init.
+----- AI Results: ------
+Added a "Deployment Options" table (rows: small-dev/standalone/largescale;
+columns: userSelf/systemd/container) to
+=serverSetup/_nodeBase_/fullUsagePanel-en.org=, pointing to the
+standalone×systemd cell as what =airflow.here= uses (single host,
+=LocalExecutor=, one systemd unit per role via CBS/CBM instead of one
+=airflow standalone= process). Added a "The 4 systemd Units and DB Init"
+table/explanation covering =airflow-db-sysd.pcs= (oneshot =airflow db
+migrate=, =RemainAfterExit=yes=) and the three long-running units
+(=airflow-webserver-sysd.pcs=, =airflow-scheduler-sysd.pcs=,
+=airflow-triggerer-sysd.pcs=), each =Requires=/=After=airflow-db.service=
+so migration completes first. Noted the CBS/CBM planting mechanism
+(=airflow-cbs.pcs= / =cbmProc-airflow.spcs=).
+
+** -
+
+
+# Local Variables:
+# eval: (setq-local toc-org-max-depth 4)
+# eval: (setq-local org-log-done 'time)
+# End:

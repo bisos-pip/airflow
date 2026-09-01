@@ -1,0 +1,188 @@
+#+title: Work Plan
+#+DATE: <2026-06-10 Wed 13:54>
+#+AUTHOR: Mohsen BANAN
+#+OPTIONS: toc:4
+#+TAGS: me ai aiAndMe
+
+# Provenance (installed once by aiActivity.cs --- not regenerated):
+#   Date:      2026-09-01T12:55:42-07:00
+#   User:      bystar
+#   Templates: /bisos/apps/defaults/ai-templates
+#   Command:   /bisos/venv/py3/devbin/aiActivity.cs -i initiate --activity=bisos-pip
+
+####+BEGIN: b:ai:file/particulars
+* AI Working Context
+  Working Directory: /bisos/git/auth/bxRepos/bisos-pip/airflow
+  File: /bisos/git/auth/bxRepos/bisos-pip/airflow/AI-WorkPlan.org
+  Activity: bisos-pip
+  Companion Docs: AI-WORKFLOW.org, AI-Activity.org, AI-DevStatus.org, README.org
+####+END:
+
+This Work Plan file drives the AI collaborative development.
+Interactions are broken down into "Stages". Each Stage has a set
+of TODOs that I work with Claude to accomplish.
+
+Note to a fresh Claude: read this file together with AI-WORKFLOW.org,
+AI-Activity.org and AI-DevStatus.org to orient yourself. The =<<Context Confirmation>>=
+TODO below is the standard first step, or use =/bx-confirm0= as the automated equivalent.
+TODOs tagged =:ai:= are assigned to Claude. After completing a TODO, summarize results
+under =----- AI Results: ------= and mark it DONE.
+
+* Stage 0: Confirm AI's Understanding of This Repo's Context
+
+Goal: Confirm AI's understanding of the context and capture that in [[Context Confirmation]] TODO.
+
+
+* Stage 0 TODOs
+** +
+** TODO [#A] <<Context Confirmation>> for AI (typically triggered by /bx-confirm0) :aiAndMe:
+SCHEDULED: <2026-06-09 Tue>
+Must be repeated each time a new Claude instance is started here.
+Based on the series of files starting from CLAUDE.md in this repo,
+describe succinctly what you have understood.
+Enumerate explicitly which files you have imported and which you have considered.
+Prompt the user to confirm that the desired/appropriate model (/model) is being used for this project.
+----- AI Results: ------
+** -
+
+* Stage 1: Update Existing Copied Starting Points For Airflow
+
+Goal: Modify files that were copied as starting points for Airflow.
+
+
+* Stage 1 TODOs
+** +
+** DONE [#A] Update README.org from bisos.dockerProc to bisos.airflow :ai:
+SCHEDULED: <2026-09-01 Tue 13:01>
+Do only minor updates. Be quick and brief. We will revisit this after the
+package has been developed. FOr now it just needs to properly mention that it is bisos.airflow
+----- AI Results: ------
+Updated the title, top-controls dblock (=pkgName=, panel links, PyPI link),
+and Overview section of =README.org= to identify the package as
+=bisos.airflow= instead of =bisos.dockerProc=. Added a brief note in the
+Overview stating the rest of the document is still carried over from the
+=dockerProc= starting-point template and describes docker/podman container
+lifecycle (to be rewritten as the package develops). Also updated the
+=* Key Files= and =* Documentation and Blee-Panels= section headers/links
+to reference =bisos.airflow= paths. Body content elsewhere (Use Cases,
+Full Design figure, Key Files list, etc.) intentionally left as-is per
+instructions to keep this quick and brief; will be revisited later.
+
+
+** DONE [#A] Accomplish /bisos/git/bxRepos/bisos-pip/airflow/py3/panels/bisos.airflow/AI-WorkPlan.org :aiAndMe:
+SCHEDULED: <2026-09-01 Tue 13:01>
+Go there and Accomplish its TODOs.
+----- AI Results: ------
+Went to the sub-panel work plan (its only open TODO was Stage 1's
+"./serverSetup/ Options intro"). Edited
+=py3/panels/bisos.airflow/serverSetup/_nodeBase_/fullUsagePanel-en.org=
+to add: (1) a Deployment Options table (small-dev/standalone/largescale ×
+userSelf/systemd/container) pointing to standalone×systemd as the
+=airflow.here= setup, and (2) a table/explanation of the 4 systemd units
+(=airflow-db-sysd.pcs= oneshot db-migrate, plus webserver/scheduler/
+triggerer, each requiring the db unit first) and how they're planted via
+=airflow-cbs.pcs=/=cbmProc-airflow.spcs=. Marked that sub-TODO DONE in the
+sub-panel's own =AI-WorkPlan.org=.
+
+
+** DONE [#A] Create a starting point py3/bin/quickAirflow.cs :aiAndMe:
+SCHEDULED: <2026-09-01 Tue 13:01>
+Just convert it from docker which is the source of its copy to airflow.
+We need an initial starting point. It need not be complete.
+We will work more on this later.
+----- AI Results: ------
+Converted =py3/bin/quickAirflow.cs= (copied from =bisos.dockerProc='s
+=dockerCmnds.cs=) into an airflow starting point: updated the summary,
+=file/particulars= path comment, and =csInfo= (moduleName/panel).
+Removed the =bisos.dockerProc= import and the =quickDocker=/=quickPodman=
+dispatch branch in the =examples= Cmnd (now always calls
+=airflowDirectCmnds()=). Replaced the docker-specific =dockerDirectCmnds=
+class with a new =airflowDirectCmnds= class providing a direct cheat-sheet
+of =airflow= CLI commands (env, db, users, dags/tasks) and =systemctl=/
+=journalctl= commands for the 4 =airflow-*-sysd= units. Only pre-existing
+unresolved-=bisos.b=-import lint warnings remain (same as other =.cs=
+files in this repo/environment); no new errors introduced.
+
+
+** DONE [#A] Create a starting point py3/bin/airflowAdmin.cs :aiAndMe:
+SCHEDULED: <2026-09-01 Tue 13:01>
+Just convert it from django which is the source of its copy to airflow.
+It needs to be specific to this systemd at airflow.here installation.
+It needs to show where the logs are. Have links for execution of airflowXX-sysd.pcs.
+It need to show where the dag files are and where the logs are.
+It needs to show users and default password.
+Again we just need a starting point.
+----- AI Results: ------
+Converted =py3/bin/airflowAdmin.cs= (copied from a django/=siteRegistrars-assemble.cs=
+starting point) into an airflow.here admin CS. Updated summary,
+=file/particulars=, and =csInfo=. Removed the django-era
+=bisos.capability.cba_assemble= import; added =bisos.banna.tcpPorts= (same
+pattern as =airflow-webserver-sysd.pcs=) plus fqdn/=AIRFLOW_HOME=/dags/logs
+path constants (=airflow.here=, =~/airflow=, =~/airflow/dags=,
+=~/airflow/logs=). Replaced the django-specific =reposEnsure=/
+=djangoBasesPrep=/=reactBasesPrep= Cmnds with three new Cmnds plus a
+=fullUpdate= aggregator:
+- =hostInfo= -- fqdn, port, =AIRFLOW_HOME=, DAG dir listing, log dir
+  listing, =journalctl -u= links for webserver/scheduler/triggerer.
+- =servicesInfo= -- per-unit =-i examples=/=systemctl status|restart=
+  links for all 4 units (=airflow-db-sysd.pcs= first, then webserver/
+  scheduler/triggerer), plus =airflow-cbs.pcs=/=cbmProc-airflow.spcs=
+  bundle-level links.
+- =usersInfo= -- =airflow users list=, the default
+  =admin/admin= bootstrap =airflow users create= command (flagged
+  NOTYET/change-on-real-installs), and =airflow users reset-password=.
+Verified no new errors beyond the pre-existing unresolved =bisos.b=/
+=bisos.banna= imports (same as sibling =.cs=/=.pcs= files in this repo).
+----- AI Results: ------
+
+** DONE [#A] Create a starting point py3/tests/ :aiAndMe:
+SCHEDULED: <2026-09-01 Tue 13:01>
+Again just a starting point. A starting point for airflowAdmin.cs smoke test is sufficient.
+----- AI Results: ------
+Rewrote =py3/tests/verify.sh= (previously =bisos.dockerProc='s leftover
+container-lifecycle smoke test) into a =bisos.airflow= starting point.
+It: (1) runs =airflowAdmin.cs= and =quickAirflow.cs= bare (examples/usage,
+non-zero ok); (2) runs =airflowAdmin.cs -i= against each of =examples=,
+=hostInfo=, =servicesInfo=, =usersInfo=, =fullUpdate=; (3) runs
+=quickAirflow.cs -i examples=; (4) a Python smoke test that loads
+=airflowAdmin.cs= via =importlib= and asserts the =examples=,
+=fullUpdate=, =hostInfo=, =servicesInfo=, =usersInfo= Cmnd classes are
+present. Kept the =lpDo= convention and the "must run from tests/"
+safety check from the original file.
+
+
+** DONE [#A] Accomplish /bisos/git/bxRepos/bisos-pip/airflow/py3/images/AI-WorkPlan.org :aiAndMe:
+SCHEDULED: <2026-09-01 Tue 13:01>
+Go there and Accomplish its TODOs.
+----- AI Results: ------
+Went to the sub-panel work plan (its only open TODO was Stage 1's
+"Create a layered figure that shows the Capability Materialization for
+Airflow"). Created =py3/images/airflow-graphviz.pcs= (modeled on the
+sibling =containerProc-graphviz.pcs=) with a top-down 4-layer figure:
+CBM pointer leaf (=cbmProc.spcs=) → CBS (=airflow-cbs.pcs=, dashed
+"points to, no duplication" edge) → bundle contents (=airflow-sbom.pcs=,
+the 4 =airflow-*-sysd.pcs= units with db-migrate-first ordering,
+=airflow-assemble.cs=) → =airflowAdmin.cs= at the bottom. Actually ran
+=./airflow-graphviz.pcs --format=all -i ngProcess all= (the =graphviz=
+package and =bisos.graphviz= seed are available in this environment) and
+it rendered successfully to
+=py3/images/airflowCapabilityMaterialization.{png,svg,pdf,...}=. Added a
+new =* Capability Materialization= section to =README.org= linking the
+rendered PNG, per the sub-TODO's instruction. Marked that sub-TODO DONE
+in the sub-panel's own =AI-WorkPlan.org=.
+
+
+
+** TODO [#A] Mohsen will push bisos.airflow to pypi. :me:
+SCHEDULED: <2026-09-01 Tue 13:01>
+This is not an AI activity.
+----- AI Results: ------
+
+
+** -
+
+
+# Local Variables:
+# eval: (setq-local toc-org-max-depth 4)
+# eval: (setq-local org-log-done 'time)
+# End:

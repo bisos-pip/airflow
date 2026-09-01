@@ -1,0 +1,197 @@
+#!/usr/bin/env python
+
+####+BEGIN: b:prog:file/particulars :authors ("./inserts/authors-mb.org")
+""" #+begin_org
+* *[[elisp:(org-cycle)][| Particulars |]]* :: Authors, version
+** This File: /bisos/git/bxRepos/bisos-pip/startAiActivity/py3/images/aiActivity-graphviz.pcs
+** Authors: Mohsen BANAN, http://mohsen.banan.1.byname.net/contact
+#+end_org """
+####+END:
+
+""" #+begin_org
+* Panel::  [[file:/bisos/panels/bisos-apps/lcnt/lcntScreencasting/subTitles/_nodeBase_/fullUsagePanel-en.org]]
+* Overview and Relevant Pointers
+#+end_org """
+
+from bisos import b
+from bisos.b import cs
+
+import graphviz
+
+from bisos.graphviz import graphvizSeed
+ng = graphvizSeed.namedGraph
+
+
+####+BEGIN: b:py3:cs:orgItem/basic :type "=Seed Setup= " :title "*Common Facilities*" :comment "General"
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  =Seed Setup=  [[elisp:(outline-show-subtree+toggle)][||]] *Common Facilities* General  [[elisp:(org-cycle)][| ]]
+#+end_org """
+####+END:
+
+namedGraphsList = [
+    # Forward reference: aiActivityFlow is defined below this block.
+    ng("aiActivityFlow",
+       func=lambda: aiActivityFlow(),
+       title="AI-Activity Structure",
+       caption="Static structure of startAiActivity.cs showing "
+               "templates, parameters, engine, generated files, "
+               "and Claude Code as consumer. Yellow-filled nodes "
+               "are symlinks to the templates base; pink-filled "
+               "nodes are per-project safe-copies. Purple numbered "
+               "edges (1-5) mark Claude Code's read order from "
+               "walk-up to import fan-out."),
+]
+
+graphvizSeed.setup(
+    seedType="common",
+    namedGraphsList=namedGraphsList,
+    # examplesHook=qmail_binsPrep.examples_csu,
+)
+
+####+BEGIN: b:py3:cs:func/typing :funcName "aiActivityFlow" :funcType "Typed" :deco "track"
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  F-T-Typed  [[elisp:(outline-show-subtree+toggle)][||]] /aiActivityFlow/  deco=track  [[elisp:(org-cycle)][| ]]
+#+end_org """
+@cs.track(fnLoc=True, fnEntry=True, fnExit=True)
+def aiActivityFlow(
+####+END:
+) -> graphviz.Digraph:
+    """ #+begin_org
+** [[elisp:(org-cycle)][| *DocStr | ]  Four-layer static structure of startAiActivity.cs:
+    templates (top) --> parameters --> engine --> generated files (bottom).
+    #+end_org """
+
+    d = graphviz.Digraph()
+    d.attr(rankdir='TB')
+
+    # Colour convention (documented in README, not on figure):
+    #   lightgoldenrod1 = symlink (shared, upstream --- edits propagate)
+    #   mistyrose       = safe-copy (per-project, yours to edit)
+    #   dodgerblue edge = read/write to a persistent store (bidirectional)
+    #   purple edge     = Claude reads (1 walk-up, 2-5 imports)
+
+    # ------------------------------------------------------------------
+    # Layer 1 (top): Templates layer -- base node + activity folders on
+    # the same rank. Base is one of the templates-layer nodes rather
+    # than a separate header row.
+    # ------------------------------------------------------------------
+    with d.subgraph() as s:
+        s.attr(rank='same')
+        s.node('tpl_base',
+               'Templates Base\n(e.g. ~/aiActivityTemplates or\n/bisos/apps/defaults/ai-templates)',
+               shape='rectangle', style='filled', fillcolor='lightyellow')
+        s.node('tpl_mother',      'mother/',           shape='folder', style='filled', fillcolor='khaki1')
+        s.node('tpl_bisospip',    'bisos-pip/',        shape='folder', style='filled', fillcolor='khaki1')
+        s.node('tpl_bleepanels',  'blee-panels/',      shape='folder', style='filled', fillcolor='khaki1')
+        s.node('tpl_custom',      'custom/',           shape='folder', style='filled', fillcolor='khaki1')
+        s.node('tpl_dots',        '...',               shape='folder', style='filled', fillcolor='khaki1')
+
+    # Only one connector from base to a child --- reader generalizes.
+    # mother/ chosen because it is the invariant, always-present activity.
+    d.edge('tpl_base', 'tpl_mother',     style='dotted', arrowhead='none', constraint='false')
+
+    # ------------------------------------------------------------------
+    # Layer 2: Parameters (CLI + persistent stores)
+    # ------------------------------------------------------------------
+    with d.subgraph() as s:
+        s.attr(rank='same')
+        s.node('par_activity',  '--activity',   shape='rectangle', style='filled', fillcolor='lightblue')
+        s.node('par_templates', '--templates',  shape='rectangle', style='filled', fillcolor='lightblue')
+        s.node('par_nolink',    '--noLink',     shape='rectangle', style='filled', fillcolor='lightblue')
+        s.node('par_userconfig','userConfig\n(~/.config/bisos/…)',
+                                                shape='cylinder',  style='filled', fillcolor='lightsteelblue')
+        s.node('par_cwdconfig', 'cwdConfig\n(./.startAiActivity.cs/…)',
+                                                shape='cylinder',  style='filled', fillcolor='lightsteelblue')
+
+    # Templates feed into parameters: --templates references the base itself;
+    # --activity selects a specific child of the chosen base.
+    d.edge('tpl_base',     'par_templates', style='dashed', arrowhead='vee')
+    d.edge('tpl_base',     'par_activity',  style='dashed', arrowhead='vee')
+
+    # ------------------------------------------------------------------
+    # Layer 3: The engine
+    # ------------------------------------------------------------------
+    d.node('engine',
+           'startAiActivity.cs\n\ninitiate  |  initiateSub\nrefresh  |  aiSuspend  |  aiResume\ndeClaudify',
+           shape='rectangle', style='filled,bold', fillcolor='darkseagreen3', fontsize='14')
+
+    d.edge('par_activity',   'engine')
+    d.edge('par_templates',  'engine')
+    d.edge('par_nolink',     'engine')
+    # Persistent stores: bidirectional (read at resolution time, written by set/auto-persist)
+    d.edge('par_userconfig', 'engine', dir='both', color='dodgerblue')
+    d.edge('par_cwdconfig',  'engine', dir='both', color='dodgerblue')
+
+    # ------------------------------------------------------------------
+    # Layer 4: Generated files in the project directory
+    # ------------------------------------------------------------------
+    # Fill colour convention:
+    #   lightgoldenrod1 = symlink (shared / upstream / updates propagate)
+    #   mistyrose       = safe-copy (per-project / editable / owned locally)
+    with d.subgraph() as s:
+        s.attr(rank='same')
+        s.node('gen_claude',    'CLAUDE.md\n[safe-copy]',
+                                shape='note', style='filled', fillcolor='mistyrose')
+        s.node('gen_workflow',  'AI-WORKFLOW.org\n[symlink]',
+                                shape='note', style='filled', fillcolor='lightgoldenrod1')
+        s.node('gen_activity',  'AI-Activity.org\n[symlink]',
+                                shape='note', style='filled', fillcolor='lightgoldenrod1')
+        s.node('gen_devstatus', 'AI-DevStatus.org\n[safe-copy+dblock]',
+                                shape='note', style='filled', fillcolor='mistyrose')
+        s.node('gen_workplan',  'AI-WorkPlan.org\n[safe-copy+dblock]',
+                                shape='note', style='filled', fillcolor='mistyrose')
+        s.node('gen_claudedir',
+               '.claude/\nsettings.json\n[symlink]',
+               shape='folder', style='filled', fillcolor='lightgoldenrod1')
+
+    # .claude/ subdirectories on their own rank below the generated-files
+    # layer. Only commands/ and skills/ are subdirs; settings.json is a
+    # regular file already shown inline in the .claude/ node label.
+    with d.subgraph() as s:
+        s.attr(rank='same')
+        s.node('cld_commands', 'commands/\n[symlink]',
+               shape='folder', style='filled', fillcolor='lightgoldenrod1')
+        s.node('cld_skills',   'skills/\n[symlink]',
+               shape='folder', style='filled', fillcolor='lightgoldenrod1')
+
+    # Containment: .claude/ holds the two subdirs (thin, non-directional).
+    d.edge('gen_claudedir', 'cld_commands', arrowhead='none', style='solid')
+    d.edge('gen_claudedir', 'cld_skills',   arrowhead='none', style='solid')
+
+    # Engine --> generated files. Edge style keeps the symlink/copy encoding
+    # in addition to the fill colour (belt-and-suspenders).
+    d.edge('engine', 'gen_claude')                             # safe-copy
+    d.edge('engine', 'gen_workflow',  style='dashed')          # symlink
+    d.edge('engine', 'gen_activity',  style='dashed')          # symlink
+    d.edge('engine', 'gen_devstatus')                          # safe-copy
+    d.edge('engine', 'gen_workplan')                           # safe-copy
+    d.edge('engine', 'gen_claudedir', style='dashed')          # symlinks
+
+    # ------------------------------------------------------------------
+    # Layer 5 (consumer): Claude Code walks up, reads CLAUDE.md, follows
+    # its @-imports to the other four org files.
+    # ------------------------------------------------------------------
+    d.node('claude',
+           'Claude Code\n(LLM-AI session)',
+           shape='ellipse', style='filled,bold', fillcolor='thistle', fontsize='13')
+
+    # (1) Claude walks up from cwd, finds CLAUDE.md.
+    d.edge('gen_claude', 'claude', label='  1  ', color='purple', fontcolor='purple', penwidth='1.6')
+    # (2..5) CLAUDE.md's @-imports fan out to the other four.
+    d.edge('gen_workflow',  'claude', label='  2  ', color='purple', fontcolor='purple', style='dotted')
+    d.edge('gen_activity',  'claude', label='  3  ', color='purple', fontcolor='purple', style='dotted')
+    d.edge('gen_devstatus', 'claude', label='  4  ', color='purple', fontcolor='purple', style='dotted')
+    d.edge('gen_workplan',  'claude', label='  5  ', color='purple', fontcolor='purple', style='dotted')
+
+    return d
+
+""" #+begin_org
+#+begin_src sh :results output :session shared
+aiActivity-graphviz.pcs --format=evince  -i ngProcess aiActivityFlow
+#+end_src
+#+RESULTS:
+: Running:: evince aiActivityFlow.pdf &
+: Graph saved as 'aiActivityFlow.pdf'
+: ngProcess: Processed All
+#+end_org """
+

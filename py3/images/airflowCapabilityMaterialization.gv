@@ -1,0 +1,45 @@
+digraph {
+	rankdir=TB
+	compound=true
+	subgraph cluster_cbm {
+		fillcolor=lightsteelblue fontname=bold fontsize=14 label="CBM (Capability Bundle Materialization)
+realm=collective  capabilityType=hereWeb  capabilityName=airflow" style=filled
+		cbm [label="cbmProc.spcs
+/bisos/platform/sys/cbm/collective/
+hereWeb/airflow/cbmProc.spcs" fillcolor=salmon margin="0.3,0.25" shape=rarrow style=filled]
+	}
+	subgraph cluster_cbs {
+		fillcolor=mistyrose fontname=bold fontsize=14 label="CBS (Capability Bundle Specification)" style=filled
+		cbs [label="airflow-cbs.pcs
+py3/bin/airflow-cbs.pcs" fillcolor=salmon fontsize=13 shape=rectangle style="filled,bold"]
+	}
+	subgraph cluster_bundle {
+		fillcolor=darkseagreen3 fontname=bold fontsize=14 label="Bundle Contents" style=filled
+		sbom [label="airflow-sbom.pcs
+(apt/pip install)" fillcolor=honeydew shape=box3d style=filled]
+		sysd_db [label="airflow-db-sysd.pcs
+(oneshot db migrate)" fillcolor=honeydew shape=box3d style=filled]
+		sysd_web [label="airflow-webserver-sysd.pcs" fillcolor=honeydew shape=box3d style=filled]
+		sysd_sched [label="airflow-scheduler-sysd.pcs" fillcolor=honeydew shape=box3d style=filled]
+		sysd_trig [label="airflow-triggerer-sysd.pcs" fillcolor=honeydew shape=box3d style=filled]
+		assemble [label="airflow-assemble.cs
+(assembly/glue)" fillcolor=honeydew shape=box3d style=filled]
+	}
+	subgraph cluster_admin {
+		fillcolor=honeydew fontname=bold fontsize=14 label="Day-to-Day Admin" style=filled
+		admin [label="airflowAdmin.cs
+hostInfo | servicesInfo | usersInfo" fillcolor=lightblue fontsize=13 shape=rectangle style="filled,bold"]
+	}
+	cbm -> cbs [label="points to
+(cbsSpec, no duplication)" color=dodgerblue lhead=cluster_cbs style=dashed]
+	cbs -> sbom [label=declares]
+	cbs -> sysd_db [label=declares]
+	cbs -> sysd_web
+	cbs -> sysd_sched
+	cbs -> sysd_trig
+	cbs -> assemble [label=declares]
+	sysd_db -> sysd_web [label="Requires/After" style=dotted]
+	sysd_db -> sysd_sched [style=dotted]
+	sysd_db -> sysd_trig [style=dotted]
+	sysd_web -> admin [label="runs against" constraint=true lhead=cluster_admin ltail=cluster_bundle style=solid]
+}

@@ -1,0 +1,246 @@
+#!/usr/bin/env python
+
+####+BEGIN: b:prog:file/particulars :authors ("./inserts/authors-mb.org")
+""" #+begin_org
+* *[[elisp:(org-cycle)][| Particulars |]]* :: Authors, version
+** This File: /bisos/git/bxRepos/bisos-pip/dockerProc/py3/images/containerProc-graphviz.pcs
+** Authors: Mohsen BANAN, http://mohsen.banan.1.byname.net/contact
+#+end_org """
+####+END:
+
+""" #+begin_org
+* Overview
+Full-design graphviz figure for bisos.dockerProc.
+Three execution platforms as color-coded clusters (LR flow):
+  1. Remote User         --- corporate host, port-22-only, ssh tunnel client
+  2. Container Platform  --- powerful VM, hosts registrar + engines + .spcs
+  3. Container Instances --- running containers, many per user
+
+Platform Registrar is DESIGN-ONLY in this phase (not implemented).
+Shown with a dashed border to indicate future work.
+
+Two consumers of the registrar:
+  - .spcs (on the platform) reads assigned ports for run/composeUp/verify
+  - Remote User reads assigned ports to generate .ssh/config tunnel entries
+#+end_org """
+
+from bisos import b
+from bisos.b import cs
+
+import graphviz
+
+from bisos.graphviz import graphvizSeed
+ng = graphvizSeed.namedGraph
+
+
+####+BEGIN: b:py3:cs:orgItem/basic :type "=Seed Setup= " :title "*Common Facilities*" :comment "General"
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  =Seed Setup=  [[elisp:(outline-show-subtree+toggle)][||]] *Common Facilities* General  [[elisp:(org-cycle)][| ]]
+#+end_org """
+####+END:
+
+namedGraphsList = [
+    # Forward reference: containerProcArchitecture is defined below this block.
+    ng("containerProcArchitecture",
+       func=lambda: containerProcArchitecture(),
+       title="bisos.dockerProc Full Design",
+       caption="Three execution platforms shown as color-coded clusters "
+               "in left-to-right flow: Remote User (corporate, port-22-only) "
+               "on the left; Container Platform (VM hosting engines, .spcs, "
+               "and the Platform Registrar) in the middle; Container "
+               "Instances (many per user) on the right. The Platform "
+               "Registrar is design-only in this phase --- shown with a "
+               "dashed border. Two consumers of the registrar: .spcs reads "
+               "assigned ports for run/composeUp/verify; Remote User reads "
+               "assigned ports to generate .ssh/config tunnel entries."),
+]
+
+graphvizSeed.setup(
+    seedType="common",
+    namedGraphsList=namedGraphsList,
+)
+
+####+BEGIN: b:py3:cs:func/typing :funcName "containerProcArchitecture" :funcType "Typed" :deco "track"
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  F-T-Typed  [[elisp:(outline-show-subtree+toggle)][||]] /containerProcArchitecture/  deco=track  [[elisp:(org-cycle)][| ]]
+#+end_org """
+@cs.track(fnLoc=True, fnEntry=True, fnExit=True)
+def containerProcArchitecture(
+####+END:
+) -> graphviz.Digraph:
+    """ #+begin_org
+** [[elisp:(org-cycle)][| *DocStr | ]  Three-cluster LR architecture:
+    Remote User (left) --> Container Platform (middle) --> Container Instances (right).
+    Registrar shown as design-only (dashed border).
+    #+end_org """
+
+    d = graphviz.Digraph()
+    d.attr(rankdir='LR')
+    d.attr(compound='true')  # allow edges between clusters
+
+    # Colour convention (documented in README, not on figure):
+    #   lightsteelblue  = Remote User lane
+    #   mistyrose       = Container Platform lane
+    #   darkseagreen3   = Container Instances lane
+    #   lightyellow     = persistent store / registrar (design-only: dashed border)
+    #   salmon          = CS / spcs dispatcher
+    #   lightblue       = CLI param / port
+    #   darksalmon      = generated artefact (.ssh/config)
+    #   thistle         = external consumer / actor
+    #   dodgerblue edge = registrar read/write (design-only, dashed)
+    #   purple edge     = ssh tunnel path
+
+    # ==================================================================
+    # Cluster 1 (LEFT): Remote User --- corporate host, port-22-only
+    # ==================================================================
+    with d.subgraph(name='cluster_remote') as c:
+        c.attr(label='Remote User\n(corporate host, port-22-only)',
+               style='filled', fillcolor='lightsteelblue',
+               fontsize='14', fontname='bold')
+
+        c.node('remote_user',
+               'engineer\n(remote workstation)',
+               shape='ellipse', style='filled', fillcolor='thistle')
+
+        c.node('remote_ssh',
+               'ssh client\n+ LocalForward\ntunnels',
+               shape='rarrow', style='filled', fillcolor='salmon',
+               margin='0.3,0.2')
+
+        c.node('remote_sshconfig',
+               '.ssh/config\n(generated)\nLocalForward\n<host>:<port>',
+               shape='note', style='filled', fillcolor='darksalmon')
+
+        # Local edges within Remote User cluster.
+        c.edge('remote_user',       'remote_ssh')
+        c.edge('remote_sshconfig',  'remote_ssh',
+               style='dashed', arrowhead='vee',
+               label='reads')
+
+    # ==================================================================
+    # Cluster 2 (MIDDLE): Container Platform --- the VM
+    # ==================================================================
+    with d.subgraph(name='cluster_platform') as c:
+        c.attr(label='Container Platform\n(the VM: hosts engines, .spcs, registrar)',
+               style='filled', fillcolor='mistyrose',
+               fontsize='14', fontname='bold')
+
+        # Image identity source: bro_dockerfiles leaf path
+        c.node('img_path',
+               'bro_dockerfiles/\ndebian/<rel>/<profile>/\nvnc/xfce/<imageName>/',
+               shape='folder', style='filled', fillcolor='lightyellow')
+
+        # The planted .spcs files (per-leaf) --- two variants
+        c.node('spcs_docker',
+               'dockerProc.spcs\n(planted in\nconfined+privileged\nleaves)',
+               shape='rarrow', style='filled', fillcolor='salmon',
+               margin='0.3,0.25')
+        c.node('spcs_podman',
+               'podmanProc.spcs\n(planted in\nrootless-sysd\nleaves)',
+               shape='rarrow', style='filled', fillcolor='salmon',
+               margin='0.3,0.25')
+
+        # The seed both spcs delegate to
+        c.node('seed',
+               'containerProc-seed.cs\n(engine-agnostic seed)\nbuild | composeUp | run\nverify | status | clean',
+               shape='rectangle', style='filled,bold',
+               fillcolor='darkseagreen3', fontsize='13')
+
+        # Registrar --- DESIGN ONLY, dashed border
+        c.node('registrar',
+               'Platform Registrar\n[DESIGN ONLY --- not implemented]\n\n/bisos/platform/registrar/dockerProc/\n<user>/<imageName>/instance0..N/\n\nassigns host-side ports\nper-instance',
+               shape='cylinder', style='dashed,filled',
+               fillcolor='lightyellow', fontsize='11',
+               margin='0.3,0.5')
+
+        # docker / podman engines
+        c.node('eng_docker', 'docker engine',
+               shape='rectangle', style='filled', fillcolor='lightblue')
+        c.node('eng_podman', 'podman engine\n(rootless)',
+               shape='rectangle', style='filled', fillcolor='lightblue')
+
+        # Local edges within Container Platform cluster.
+        c.edge('img_path',    'spcs_docker', style='dotted',
+               arrowhead='none', label='planted in\ndocker leaves')
+        c.edge('img_path',    'spcs_podman', style='dotted',
+               arrowhead='none', label='planted in\nrootless leaves')
+
+        c.edge('spcs_docker', 'seed', label='delegates')
+        c.edge('spcs_podman', 'seed', label='delegates')
+
+        # .spcs reads assigned ports from registrar (design-only, dashed)
+        c.edge('registrar', 'spcs_docker', style='dashed',
+               color='dodgerblue', label='ports\n(design)')
+        c.edge('registrar', 'spcs_podman', style='dashed',
+               color='dodgerblue', label='ports\n(design)')
+
+        # Seed drives the engines.
+        c.edge('seed', 'eng_docker')
+        c.edge('seed', 'eng_podman')
+
+    # ==================================================================
+    # Cluster 3 (RIGHT): Container Instances --- running containers, many
+    # ==================================================================
+    with d.subgraph(name='cluster_instances') as c:
+        c.attr(label='Container Instances\n(many per user)',
+               style='filled', fillcolor='darkseagreen3',
+               fontsize='14', fontname='bold')
+
+        c.node('inst_a0',
+               'image-A / inst0\nssh:22 vnc:5901 novnc:6901\n(container-side)',
+               shape='box3d', style='filled', fillcolor='honeydew')
+        c.node('inst_a1',
+               'image-A / inst1',
+               shape='box3d', style='filled', fillcolor='honeydew')
+        c.node('inst_b0',
+               'image-B / inst0',
+               shape='box3d', style='filled', fillcolor='honeydew')
+        c.node('inst_dots',
+               '... instN',
+               shape='box3d', style='filled', fillcolor='honeydew')
+
+    # ==================================================================
+    # Cross-cluster edges
+    # ==================================================================
+
+    # Engines materialize containers.
+    d.edge('eng_docker', 'inst_a0', label='builds/runs')
+    d.edge('eng_docker', 'inst_a1')
+    d.edge('eng_podman', 'inst_b0', label='builds/runs\n--systemd=always')
+    d.edge('eng_podman', 'inst_dots', style='dotted')
+
+    # Registrar --> Remote User's .ssh/config (design-only, dashed).
+    # The registrar is the source-of-truth for port assignments; Remote User
+    # reads it (over ssh) to generate its .ssh/config LocalForward entries.
+    d.edge('registrar', 'remote_sshconfig',
+           style='dashed', color='dodgerblue',
+           label='port assignments\n(design)',
+           constraint='false')
+
+    # ssh tunnel from Remote User --> Container Platform (port 22 only).
+    # Purple color denotes the tunnel path.
+    d.edge('remote_ssh', 'seed',
+           color='purple', penwidth='1.8',
+           label='ssh tunnel\n(port 22 only)',
+           lhead='cluster_platform')
+
+    # Tunnel forwards --> Container Instances (via LocalForward).
+    d.edge('remote_ssh', 'inst_a0',
+           color='purple', style='dotted', penwidth='1.4',
+           label='LocalForward\nto assigned\nhost ports',
+           lhead='cluster_instances',
+           constraint='false')
+
+    return d
+
+""" #+begin_org
+* Iteration loop
+#+begin_src sh :results output :session shared
+containerProc-graphviz.pcs --format=evince  -i ngProcess containerProcArchitecture
+#+end_src
+
+* Commit render
+#+begin_src sh :results output :session shared
+containerProc-graphviz.pcs --format=all  -i ngProcess all
+#+end_src
+#+end_org """

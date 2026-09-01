@@ -1,0 +1,211 @@
+#!/usr/bin/env python
+
+""" #+begin_org
+* Panel::  [[file:/bisos/panels/bisos-apps/NameOfThePanelComeHere/_nodeBase_/fullUsagePanel-en.org]]
+* Overview and Relevant Pointers
+#+end_org """
+
+from bisos import b
+# from bisos.b import cmndsSeed
+from bisos.b import cs
+from bisos.b import b_io
+
+import json
+import pathlib
+from bisos.basics import pyRunAs
+
+# import collections
+
+from bisos.sbom import pkgsSeed  # pkgsSeed.plantWithWhich("seedSbom.cs")
+ap = pkgsSeed.aptPkg
+pp = pkgsSeed.pipPkg
+
+pkgsSeed.pkgsSeedInfo.virtenv = "/bisos/venv/py3/asc"
+
+aptPkgsList = [
+    ap("python3"),                  # Airflow requires Python 3.8+
+    ap("python3-pip"),              # pip for airflow installation
+    ap("python3-venv"),             # venv for isolated airflow environment
+    ap("build-essential"),          # C compiler needed for some Airflow deps
+    ap("libpq-dev"),                # PostgreSQL client headers (for psycopg2)
+    ap("libssl-dev"),               # SSL support
+    ap("libffi-dev"),               # Foreign function interface (required by cryptography)
+    ap("pkg-config"),               # Used by pip to locate system libraries
+]
+
+pipPkgsList = [
+    pp("apache-airflow", ver=">=2.9.0"),
+]
+
+pkgsSeed.setup(
+    aptPkgsList=aptPkgsList,
+    pipPkgsList=pipPkgsList,
+)
+
+
+####+BEGIN: b:py3:cs:cmnd/classHead :cmndName "readme" :extent "verify" :comment "Describe" :parsMand "" :parsOpt "" :argsMin 0 :argsMax 0 :pyInv ""
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  CmndSvc-   [[elisp:(outline-show-subtree+toggle)][||]] <<readme>>  *Describe*  =verify= ro=cli   [[elisp:(org-cycle)][| ]]
+#+end_org """
+class readme(cs.Cmnd):
+    cmndParamsMandatory = [ ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @cs.track(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+             rtInv: cs.RtInvoker,
+             cmndOutcome: b.op.Outcome,
+    ) -> b.op.Outcome:
+        """Describe"""
+        failed = b_io.eh.badOutcome
+        callParamsDict = {}
+        if self.invocationValidate(rtInv, cmndOutcome, callParamsDict, None).isProblematic():
+            return failed(cmndOutcome)
+####+END:
+        descriptionStr = """\
+** Scope: Apache Airflow -- workflow orchestration platform on Debian 12.
+
+** What this installs:
+  1) System apt packages: python3, python3-pip, python3-venv, build-essential,
+     libpq-dev, libssl-dev, libffi-dev, pkg-config.
+  2) pip package: apache-airflow (>=2.9.0), installed into the active Python env.
+
+** Minimal standalone setup (SQLite, SequentialExecutor -- for local testing):
+       export AIRFLOW_HOME=~/airflow
+       airflow db migrate
+       airflow standalone   # starts webserver + scheduler + triggerer
+       # credentials auto-generated at: ~/airflow/simple_auth_manager_passwords.json.generated
+       # username: admin   password: <see file above>
+
+** For production use, replace SQLite with PostgreSQL or MySQL and set
+   AIRFLOW__DATABASE__SQL_ALCHEMY_CONN accordingly.
+
+** Installation:
+       airflow-sbom.pcs -i sbom_fullUpdate\
+"""
+        print(descriptionStr)
+
+        return cmndOutcome.set(
+            opError=b.op.OpError.Success,
+            opResults=None,
+        )
+
+####+BEGIN: b:py3:cs:cmnd/classHead :cmndName "adminPasswd" :extent "verify" :comment "Get admin passwd" :parsMand "" :parsOpt "" :argsMin 0 :argsMax 0 :pyInv ""
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  CmndSvc-   [[elisp:(outline-show-subtree+toggle)][||]] <<adminPasswd>>  *Get admin passwd*  =verify= ro=cli   [[elisp:(org-cycle)][| ]]
+#+end_org """
+class adminPasswd(cs.Cmnd):
+    cmndParamsMandatory = [ ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @cs.track(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+             rtInv: cs.RtInvoker,
+             cmndOutcome: b.op.Outcome,
+    ) -> b.op.Outcome:
+        """Print the auto-generated Simple Auth Manager admin password.
+
+        The systemd airflow services run as root, so their AIRFLOW_HOME is
+        /root/airflow and the generated password file is owned by root (and
+        /root is not world-traversable) --- hence the read is done as root.
+        """
+        failed = b_io.eh.badOutcome
+        callParamsDict = {}
+        if self.invocationValidate(rtInv, cmndOutcome, callParamsDict, None).isProblematic():
+            return failed(cmndOutcome)
+
+        pwFile = pathlib.Path("/root/airflow/simple_auth_manager_passwords.json.generated")
+
+        contentStr = pyRunAs.as_root_readFromFile(pwFile)
+        if not contentStr:
+            b_io.ann.note(f"ERROR: could not read {pwFile} (has airflow been started at least once?)")
+            return failed(cmndOutcome)
+
+        try:
+            passwd = json.loads(contentStr).get("admin")
+        except json.JSONDecodeError:
+            b_io.ann.note(f"ERROR: {pwFile} is not valid JSON")
+            return failed(cmndOutcome)
+
+        if not passwd:
+            b_io.ann.note(f"ERROR: no 'admin' entry in {pwFile}")
+            return failed(cmndOutcome)
+
+        print(passwd)
+        return cmndOutcome.set(
+            opError=b.op.OpError.Success,
+            opResults=passwd,
+        )
+####+END:
+
+def examples_csu() -> b.op.Outcome:
+    """Common Usage Examples for this Command-Service Unit"""
+
+    cmnd = cs.examples.cmndEnter
+    literal = cs.examples.execInsert
+
+    airflow = pkgsSeed.pkgsSeedInfo.binPath("airflow")
+    pip = pkgsSeed.pkgsSeedInfo.binPath("pip")
+    python3 = pkgsSeed.pkgsSeedInfo.binPath("python3")
+
+    cmndOutcome = b.op.Outcome()
+
+    cs.examples.menuChapter('*Airflow Command Examples*')
+    if not (resStr := b.subProc.Op(outcome=cmndOutcome, log=0).bash(
+       f"""which airflow""").stdout):
+        pass
+
+    literal(f"which airflow # {resStr.strip()}")
+    literal(f"{airflow} version")
+    literal(f"{airflow} --help")
+
+    cmnd('readme', comment=" # An overview short description")
+
+    cs.examples.menuChapter('*Installation*')
+    literal("airflow-sbom.pcs -i sbom_fullUpdate")
+
+    cs.examples.menuChapter('*Airflow Home and Environment*')
+    literal("export AIRFLOW_HOME=~/airflow")
+    literal("echo $AIRFLOW_HOME")
+    literal(f"{airflow} config list")
+    literal(f"{airflow} info")
+
+    cs.examples.menuChapter('*Database Initialisation*')
+    literal(f"{airflow} db migrate          # initialise / migrate the metadata DB")
+    literal(f"{airflow} db check            # verify DB connectivity")
+
+    cs.examples.menuChapter('*User Management*')
+    literal("# standalone generates credentials at: ~/airflow/simple_auth_manager_passwords.json.generated")
+    literal("cat ~/airflow/simple_auth_manager_passwords.json.generated  # username: admin, password: <generated>")
+    cmnd('adminPasswd', comment=" # print the auto-generated admin password (reads /root/airflow as root)")
+    literal(f"{airflow} users list")
+
+    cs.examples.menuChapter('*Running Airflow (standalone / local testing)*')
+    literal(f"{airflow} standalone           # all-in-one: webserver + scheduler + triggerer")
+    literal(f"{airflow} webserver --port 8080")
+    literal(f"{airflow} scheduler")
+
+    cs.examples.menuChapter('*DAGs*')
+    literal(f"{airflow} dags list")
+    literal(f"{airflow} dags trigger <dag_id>")
+    literal(f"{airflow} dags pause <dag_id>")
+    literal(f"{airflow} dags unpause <dag_id>")
+    literal(f"{airflow} dags show <dag_id>")
+
+    cs.examples.menuChapter('*Tasks*')
+    literal(f"{airflow} tasks list <dag_id>")
+    literal(f"{airflow} tasks test <dag_id> <task_id> <execution_date>")
+
+    cs.examples.menuChapter('*Connections and Variables*')
+    literal(f"{airflow} connections list")
+    literal(f"{airflow} variables list")
+
+    cs.examples.menuChapter('*Verify Installation*')
+    literal(f"{pip} show apache-airflow")
+    literal(f"{airflow} version")
+    literal(f"{python3} -c \"import airflow; print(airflow.__version__)\"")
+
+    cs.examples.menuChapter('*End-Of Airflow Command Examples*')
+    return cmndOutcome

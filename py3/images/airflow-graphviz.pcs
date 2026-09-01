@@ -1,0 +1,206 @@
+#!/usr/bin/env python
+
+####+BEGIN: b:prog:file/particulars :authors ("./inserts/authors-mb.org")
+""" #+begin_org
+* *[[elisp:(org-cycle)][| Particulars |]]* :: Authors, version
+** This File: /bisos/git/bxRepos/bisos-pip/airflow/py3/images/airflow-graphviz.pcs
+** Authors: Mohsen BANAN, http://mohsen.banan.1.byname.net/contact
+#+end_org """
+####+END:
+
+""" #+begin_org
+* Overview
+Layered figure for bisos.airflow's Capability Materialization, top to bottom:
+
+  1. CBM (Capability Bundle Materialization) --- the planted pointer leaf
+     /bisos/platform/sys/cbm/collective/hereWeb/airflow/cbmProc.spcs
+     Points to (does NOT duplicate) the CBS below.
+
+  2. CBS (Capability Bundle Specification) ---
+     /bisos/git/bxRepos/bisos-pip/airflow/py3/bin/airflow-cbs.pcs
+     Declares the bundle: sbom + 4 sysd units + assemble.
+
+  3. Under the CBS, three sibling pieces it declares/drives:
+       - airflow-sbom.pcs        --- apt/pip package install (venv, deps)
+       - 4x *-sysd.pcs           --- airflow-db, webserver, scheduler, triggerer
+       - airflow-assemble.cs     --- assembly/glue step
+
+  4. Under all of that: airflowAdmin.cs --- the admin-facing CS an operator
+     actually runs day-to-day (status, logs, dags, users) against this
+     materialized installation.
+
+This figure is added to README.org.
+#+end_org """
+
+from bisos import b
+from bisos.b import cs
+
+import graphviz
+
+from bisos.graphviz import graphvizSeed
+ng = graphvizSeed.namedGraph
+
+
+####+BEGIN: b:py3:cs:orgItem/basic :type "=Seed Setup= " :title "*Common Facilities*" :comment "General"
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  =Seed Setup=  [[elisp:(outline-show-subtree+toggle)][||]] *Common Facilities* General  [[elisp:(org-cycle)][| ]]
+#+end_org """
+####+END:
+
+namedGraphsList = [
+    # Forward reference: airflowCapabilityMaterialization is defined below this block.
+    ng("airflowCapabilityMaterialization",
+       func=lambda: airflowCapabilityMaterialization(),
+       title="bisos.airflow Capability Materialization",
+       caption="Top-down layering of airflow.here's Capability Materialization: "
+               "the planted CBM pointer leaf (cbmProc.spcs) at the top points to "
+               "(does not duplicate) the CBS (airflow-cbs.pcs), which declares the "
+               "bundle of sbom, the 4 airflow-*-sysd.pcs units, and the assemble "
+               "step. airflowAdmin.cs sits below all of that as the day-to-day "
+               "admin-facing CS an operator runs against the materialized "
+               "installation."),
+]
+
+graphvizSeed.setup(
+    seedType="common",
+    namedGraphsList=namedGraphsList,
+)
+
+####+BEGIN: b:py3:cs:func/typing :funcName "airflowCapabilityMaterialization" :funcType "Typed" :deco "track"
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  F-T-Typed  [[elisp:(outline-show-subtree+toggle)][||]] /airflowCapabilityMaterialization/  deco=track  [[elisp:(org-cycle)][| ]]
+#+end_org """
+@cs.track(fnLoc=True, fnEntry=True, fnExit=True)
+def airflowCapabilityMaterialization(
+####+END:
+) -> graphviz.Digraph:
+    """ #+begin_org
+** [[elisp:(org-cycle)][| *DocStr | ]  Top-down (TB) layered architecture:
+    CBM pointer (top) --> CBS (declares bundle) --> sbom/4-sysd/assemble (middle)
+    --> airflowAdmin.cs (bottom, day-to-day admin CS).
+    #+end_org """
+
+    d = graphviz.Digraph()
+    d.attr(rankdir='TB')
+    d.attr(compound='true')
+
+    # Colour convention (documented in README, not on figure):
+    #   lightsteelblue = CBM pointer layer
+    #   mistyrose      = CBS declaration layer
+    #   darkseagreen3  = sbom / sysd units / assemble layer
+    #   honeydew       = admin CS layer
+    #   salmon         = CS / spcs / cbm dispatcher node
+    #   dashed edge    = "points to, does not duplicate"
+    #   solid edge     = "declares" / "drives" / "runs against"
+
+    # ==================================================================
+    # Layer 1 (TOP): CBM --- planted pointer leaf
+    # ==================================================================
+    with d.subgraph(name='cluster_cbm') as c:
+        c.attr(label='CBM (Capability Bundle Materialization)\n'
+                      'realm=collective  capabilityType=hereWeb  capabilityName=airflow',
+               style='filled', fillcolor='lightsteelblue',
+               fontsize='14', fontname='bold')
+
+        c.node('cbm',
+               'cbmProc.spcs\n'
+               '/bisos/platform/sys/cbm/collective/\nhereWeb/airflow/cbmProc.spcs',
+               shape='rarrow', style='filled', fillcolor='salmon',
+               margin='0.3,0.25')
+
+    # ==================================================================
+    # Layer 2: CBS --- declares the bundle
+    # ==================================================================
+    with d.subgraph(name='cluster_cbs') as c:
+        c.attr(label='CBS (Capability Bundle Specification)',
+               style='filled', fillcolor='mistyrose',
+               fontsize='14', fontname='bold')
+
+        c.node('cbs',
+               'airflow-cbs.pcs\n'
+               'py3/bin/airflow-cbs.pcs',
+               shape='rectangle', style='filled,bold',
+               fillcolor='salmon', fontsize='13')
+
+    # ==================================================================
+    # Layer 3: sbom + 4 sysd units + assemble
+    # ==================================================================
+    with d.subgraph(name='cluster_bundle') as c:
+        c.attr(label='Bundle Contents',
+               style='filled', fillcolor='darkseagreen3',
+               fontsize='14', fontname='bold')
+
+        c.node('sbom',
+               'airflow-sbom.pcs\n(apt/pip install)',
+               shape='box3d', style='filled', fillcolor='honeydew')
+
+        c.node('sysd_db',
+               'airflow-db-sysd.pcs\n(oneshot db migrate)',
+               shape='box3d', style='filled', fillcolor='honeydew')
+        c.node('sysd_web',
+               'airflow-webserver-sysd.pcs',
+               shape='box3d', style='filled', fillcolor='honeydew')
+        c.node('sysd_sched',
+               'airflow-scheduler-sysd.pcs',
+               shape='box3d', style='filled', fillcolor='honeydew')
+        c.node('sysd_trig',
+               'airflow-triggerer-sysd.pcs',
+               shape='box3d', style='filled', fillcolor='honeydew')
+
+        c.node('assemble',
+               'airflow-assemble.cs\n(assembly/glue)',
+               shape='box3d', style='filled', fillcolor='honeydew')
+
+    # ==================================================================
+    # Layer 4 (BOTTOM): airflowAdmin.cs --- day-to-day admin CS
+    # ==================================================================
+    with d.subgraph(name='cluster_admin') as c:
+        c.attr(label='Day-to-Day Admin',
+               style='filled', fillcolor='honeydew',
+               fontsize='14', fontname='bold')
+
+        c.node('admin',
+               'airflowAdmin.cs\n'
+               'hostInfo | servicesInfo | usersInfo',
+               shape='rectangle', style='filled,bold',
+               fillcolor='lightblue', fontsize='13')
+
+    # ==================================================================
+    # Cross-layer edges
+    # ==================================================================
+
+    # CBM points to (does not duplicate) CBS.
+    d.edge('cbm', 'cbs', style='dashed', color='dodgerblue',
+           label='points to\n(cbsSpec, no duplication)',
+           lhead='cluster_cbs')
+
+    # CBS declares/drives the bundle contents.
+    d.edge('cbs', 'sbom',      label='declares')
+    d.edge('cbs', 'sysd_db',   label='declares')
+    d.edge('cbs', 'sysd_web')
+    d.edge('cbs', 'sysd_sched')
+    d.edge('cbs', 'sysd_trig')
+    d.edge('cbs', 'assemble',  label='declares')
+
+    # DB migration ordering before the three long-running units.
+    d.edge('sysd_db', 'sysd_web',   style='dotted', label='Requires/After')
+    d.edge('sysd_db', 'sysd_sched', style='dotted')
+    d.edge('sysd_db', 'sysd_trig',  style='dotted')
+
+    # Admin CS runs against the materialized units.
+    d.edge('sysd_web',   'admin', style='solid', label='runs against',
+           ltail='cluster_bundle', lhead='cluster_admin', constraint='true')
+
+    return d
+
+""" #+begin_org
+* Iteration loop
+#+begin_src sh :results output :session shared
+airflow-graphviz.pcs --format=evince  -i ngProcess airflowCapabilityMaterialization
+#+end_src
+
+* Commit render
+#+begin_src sh :results output :session shared
+airflow-graphviz.pcs --format=all  -i ngProcess all
+#+end_src
+#+end_org """
