@@ -176,8 +176,64 @@ in the sub-panel's own =AI-WorkPlan.org=.
 ** TODO [#A] Mohsen will push bisos.airflow to pypi. :me:
 SCHEDULED: <2026-09-01 Tue 13:01>
 This is not an AI activity.
+----- Mohsen Results: ------
+bisos.airflow has been locally installed.
+bisos.airflow has been installed on PyPi.
+bisos-pip/airflow has been pushed to github.
+
+** -
+
+
+* Stage 2: Refinements After Adoption
+
+Goal: Get bisos.airflow to presentable and in continous use state
+
+
+* Stage 2 TODOs
+** +
+** DONE [#A] Update README.org to a presentable state -- Second rev of edits  :ai:
+SCHEDULED: <2026-09-01 Tue 13:01>
+Now we want to make the README.org presentable. It needs to:
+- Follow the general pattern of bisos-pip/package/README.org
+- Get rid of all things that are dockerProc related in that README.org
+- Mention that With CBM, we can install as systemd.
+----- AI Results: ------
+Fully rewrote =README.org=, following the general bisos-pip README pattern
+(topControls, Overview, PYPI-description dblock, Table of Contents,
+Installation with pip/pipx, Usage, Key Files, Part of BISOS, Documentation
+and Blee-Panels, Support). Removed every remaining =bisos.dockerProc=/
+=bro_dockerfiles=/container-profile section (Use Cases, Full Design at a
+Glance/=containerProcArchitecture.png=, the =.spcs=/path-derived-config
+sections, Three Init/Isolation Profiles, docker/podman installation and
+cheat-sheet usage, the old dockerProc Key Files list). Kept and expanded
+the "Capability Materialization" section (linking
+=airflowCapabilityMaterialization.png=) and added a new "The 4 systemd
+Units and DB Init" section explaining =airflow-db-sysd.pcs= (oneshot
+migrate) plus the three long-running units, each =Requires=/=After=
+the db unit -- explicitly stating that *with CBM, Airflow's four
+processes are installed as independent host systemd units* rather than
+one monolithic =airflow standalone= process. Updated Installation,
+Usage (=airflowAdmin.cs=/=quickAirflow.cs=), Key Files, and Documentation
+sections to reference only =bisos.airflow='s own files.
 ----- AI Results: ------
 
+
+** DONE [#A] Improve  py3/bin/airflowAdmin.cs :aiAndMe:
+SCHEDULED: <2026-09-01 Tue 13:01>
+For this system's running airflow, show location of input DAGs directory.
+Have a examples literate line that just says:   http://airflow.here
+----- AI Results: ------
+Edited =hostInfo='s cmnd body in =py3/bin/airflowAdmin.cs=: added a
+literal =http://{_airflowFqdn}= line under the =/Host/= menuSection (a
+direct clickable/copyable URL, per instructions), and enhanced the DAG
+directory menuSection (retitled "/DAG files -- input DAGs directory for
+this installation/") to explicitly =echo= the =_airflowDagsDir= path with
+a descriptive comment before the existing =ls -la= listing. Verified via
+=py3/bin/./verify.sh= (run from =py3/tests/=, using its own =#!/bin/bash -i=
+shebang) that =airflowAdmin.cs -i fullUpdate= produces the correct output:
+=echo airflow.here=, =echo 24006=, =http://airflow.here=, the
+=AIRFLOW_HOME= echo, the DAG dir echo+ls, and the logs section --
+all present and correctly ordered.
 
 ** -
 

@@ -258,11 +258,13 @@ class hostInfo(cs.Cmnd):
         cs.examples.menuSection('/Host/')
         literal(f"echo {_airflowFqdn}   # fqdn -- see py3/bin/airflow-here-dns.pcs")
         literal(f"echo {_airflowPortNu}   # webserver/api-server port -- see bisos.banna tcpPorts")
+        literal(f"http://{_airflowFqdn}   # web UI -- open in a browser")
 
         cs.examples.menuSection('/AIRFLOW_HOME/')
         literal(f"echo {_airflowHome}")
 
-        cs.examples.menuSection('/DAG files/')
+        cs.examples.menuSection('/DAG files -- input DAGs directory for this installation/')
+        literal(f"echo {_airflowDagsDir}   # AIRFLOW_HOME/dags -- drop .py DAG files here")
         literal(f"ls -la {_airflowDagsDir}")
 
         cs.examples.menuSection('/Logs/')
