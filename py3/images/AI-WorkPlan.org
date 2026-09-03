@@ -52,7 +52,7 @@ Goal: Capture the flow of installation for airflow systemd in ./airflow-graphviz
 
 * Stage 1 TODOs
 ** +
-** DONE [#A] Create a layered figure that shows the Capability Materialization for Airflow
+** TODO [#A] Create a layered figure that shows the Capability Materialization for Airflow
 SCHEDULED: <2026-09-01 Tue 14:04>
 On the top is:
        /bisos/platform/sys/cbm/collective/hereWeb/airflow/cbmProc.spcs
@@ -60,33 +60,11 @@ Then we have /bisos/git/bxRepos/bisos-pip/airflow/py3/bin/airflow-cbs.pcs
 Under that
    - airlow-sbom.pcs
    - we have 4 -sysd.pcs
+   - dns -- here/Dns
    - Assemble
 Under that we have:
    - airflowAdmin.cs
 ===== This Figure is then added to README.org
------ AI Results: ------
-Created =py3/images/airflow-graphviz.pcs= (modeled on the sibling
-=containerProc-graphviz.pcs=), defining a =graphviz.Digraph= function
-=airflowCapabilityMaterialization()= with a top-down (TB) 4-layer figure:
-(1) CBM pointer leaf =cbmProc.spcs= (realm=collective,
-capabilityType=hereWeb, capabilityName=airflow); (2) CBS
-=airflow-cbs.pcs=, connected from CBM via a dashed "points to (no
-duplication)" edge; (3) the bundle contents CBS declares --
-=airflow-sbom.pcs=, the 4 =airflow-*-sysd.pcs= units (db-migrate ordered
-before webserver/scheduler/triggerer via dotted Requires/After edges),
-and =airflow-assemble.cs=; (4) =airflowAdmin.cs= at the bottom as the
-day-to-day admin CS run against the materialized units.
-
-Actually ran =./airflow-graphviz.pcs --format=all -i ngProcess all= --
-=bisos.graphviz='s seed framework and the =graphviz= package are
-available in this environment -- and it rendered successfully, producing
-=airflowCapabilityMaterialization.{gv,pdf,svg,odg,jpg,png,title,caption}=
-in =py3/images/=.
-
-Added a new =* Capability Materialization= section to =README.org=
-(right after the Overview's carry-over note) with the figure link
-=[[file:py3/images/airflowCapabilityMaterialization.png]]=, a short
-explanation of the four layers, and the regeneration command.
 ----- AI Results: ------
 ** -
 

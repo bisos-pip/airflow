@@ -24,6 +24,6 @@ from bisos.capability import cbmProc_seed  # noqa: F401  _atExit_
 from bisos.capability import cbmProc_seedInfo
 cbmProc_seedInfo.setup(
     capabilityName="airflow",
-    cbsSpec="/bisos/asc/web/bin/airflow-cbs.pcs",   # basename form (requires /bisos/asc/web/bin on PATH)
-    # cbsSpec="/bisos/asc/web/bin/airflow-cbs.pcs",  # absolute-lock alternative
+    cbsSpec="/bisos/git/bxRepos/bisos-pip/airflow/py3/bin/airflow-cbs.pcs",
+
 )

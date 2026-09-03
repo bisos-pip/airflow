@@ -13,6 +13,7 @@ from bisos.csSeed import seedsLib
 from bisos.webCap import capWebVd_seed  # noqa: F401  # _atExit_
 
 from bisos.webCap import capWebVd_seedInfo
+from bisos.webCap import webVd_nginxSites
 from bisos.banna import tcpPorts as bannaTcpPorts
 
 serverName = "airflow.here"
