@@ -5,7 +5,7 @@ SEED="
 *  /[dblock]/ /Seed/ :: [[file:/bisos/core/bsip/bin/seedFtoCommon.sh]] |
 "
 FILE="
-*  /This File/ :: /bisos/panels/bisos-core/asc/bedrock/airflow/ftoProc.sh
+*  /This File/ :: /bisos/panels/bisos-core/bisos-pip/bisos.airflow/ftoProc.sh
 "
 if [ "${loadFiles}" == "" ] ; then
     /bisos/core/bsip/bin/seedFtoCommon.sh -l $0 "$@"
@@ -32,6 +32,7 @@ leavesList="
 nodesList="
 monitoringLoggingAlerting
 serverSetup
+.aiActivity.cs
 scalingExecutors
 dagDevelopmentTesting
 _nodeBase_

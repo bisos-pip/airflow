@@ -5,7 +5,7 @@ SEED="
 *  /[dblock]/ /Seed/ :: [[file:/bisos/core/bsip/bin/seedFtoCommon.sh]] |
 "
 FILE="
-*  /This File/ :: /bisos/panels/bisos-core/asc/bedrock/airflow/monitoringLoggingAlerting/ftoProc.sh
+*  /This File/ :: /bisos/panels/bisos-core/bisos-pip/bisos.airflow/monitoringLoggingAlerting/ftoProc.sh
 "
 if [ "${loadFiles}" == "" ] ; then
     /bisos/core/bsip/bin/seedFtoCommon.sh -l $0 "$@"
