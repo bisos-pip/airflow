@@ -238,6 +238,36 @@ all present and correctly ordered.
 ** -
 
 
+* Stage 3: Improvements Towards Best Current Practices Installation
+
+Goal: Get bisos.airflow to presentable and in continous use state
+
+
+* Stage 3 TODOs
+** +
+** TODO [#A] Create  airflow User, Create /etc/default/airflow, Create /opt/airflow Redo systemd entries for running are airflow
+SCHEDULED: <2026-09-10 Thu 14:56>
+======
+# 1. Create a dedicated system user
+sudo useradd -r -m -s /bin/bash airflow
+
+# 2. Set up the installation directory and virtual environment
+sudo mkdir -p /opt/airflow
+sudo chown -R airflow:airflow /opt/airflow
+sudo -u airflow python3 -m venv /opt/airflow/venv
+
+# 3. Setup tmpfiles daemon configuration for PID and socket files
+echo "D /run/airflow 0755 airflow airflow -" | sudo tee /etc/tmpfiles.d/airflow.conf
+sudo systemd-tmpfiles --create
+======
+# FILE: /etc/default/airflow
+AIRFLOW_HOME=/opt/airflow
+# Add any overrides or environment variables needed by your DAGs here
+=======
+----- AI Results: ------
+
+** -
+
 # Local Variables:
 # eval: (setq-local toc-org-max-depth 4)
 # eval: (setq-local org-log-done 'time)
