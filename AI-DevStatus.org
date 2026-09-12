@@ -26,7 +26,22 @@ Note to a fresh Claude: this file is intentionally sparse at project start.
 Fill in the sections below when asked to update, following the structure provided.
 
 * Current State
-  [To be filled in by Claude after first substantive interaction]
+
+  =AI-Usage.org= (in this repo's root, alongside this file) documents what
+  =bisos.airflow= actually does and its current gaps --- package scope, the
+  four systemd unit templates, the =api-server=/=apache-airflow>=2.9.0=
+  version-floor mismatch, "executor/backend and cross-venv DAG bridging are
+  not this package's concern", and package maturity (no Python library/CSU
+  surface yet, most Blee-panel content beyond =serverSetup= is aspirational).
+  It is deliberately *not* imported by this repo's own =CLAUDE.md= --- it's
+  written to be =@=-imported by downstream projects that deploy Airflow the
+  BISOS way (first consumer: =site-status-scripts='s
+  =airflow/AI-Activity.org=), so a fresh Claude session in *this* repo won't
+  see it unless it opens the file directly. Tracked in git, same as the rest
+  of this repo. Content last verified against source on 2026-09-10.
+
+  [Further current-state notes to be filled in by Claude after first
+  substantive interaction.]
 
 * Architecture
   [Key components, file structure, entry points]

@@ -27,11 +27,21 @@ def sysdUnitFileFunc() -> str | None:
     templateStr = f"""
 [Unit]
 Description=Airflow DB Migration
-After=network.target
+# The metadata DB is PostgreSQL (see airflow-sbom.pcs airflowPostgresSetup).
+# This is the only unit that needs to name it: airflow-db is the first thing
+# to touch the database, and the four long-running units all carry
+# Requires=/After=airflow-db.service, so ordering reaches them transitively
+# -- airflow-db is Type=oneshot+RemainAfterExit, so "after airflow-db" means
+# after db migrate has completed, which is necessarily after postgres is up.
+After=network.target postgresql.service
+Requires=postgresql.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+User=airflow
+Group=airflow
+EnvironmentFile=/etc/default/airflow
 ExecStart={execPath} db migrate
 
 [Install]

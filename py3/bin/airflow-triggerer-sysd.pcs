@@ -31,6 +31,9 @@ After=network.target airflow-db.service
 Requires=airflow-db.service
 
 [Service]
+User=airflow
+Group=airflow
+EnvironmentFile=/etc/default/airflow
 ExecStart={execPath} triggerer
 Restart=on-failure
 RestartSec=10

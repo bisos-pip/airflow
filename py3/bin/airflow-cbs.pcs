@@ -32,10 +32,14 @@ cba_seed.setup(
 )
 
 sysdUnitsListAirflow = [
-    cba_sysd_seed.sysdUnit("airflow-db",         "airflow-db-sysd.pcs"),
-    cba_sysd_seed.sysdUnit("airflow-webserver",  "airflow-webserver-sysd.pcs"),
-    cba_sysd_seed.sysdUnit("airflow-scheduler",  "airflow-scheduler-sysd.pcs"),
-    cba_sysd_seed.sysdUnit("airflow-triggerer",  "airflow-triggerer-sysd.pcs"),
+    cba_sysd_seed.sysdUnit("airflow-db",            "airflow-db-sysd.pcs"),
+    cba_sysd_seed.sysdUnit("airflow-webserver",     "airflow-webserver-sysd.pcs"),
+    cba_sysd_seed.sysdUnit("airflow-scheduler",     "airflow-scheduler-sysd.pcs"),
+    cba_sysd_seed.sysdUnit("airflow-triggerer",     "airflow-triggerer-sysd.pcs"),
+    # Airflow 3 parses DAG files in a standalone process, not in the scheduler.
+    # Omitting this yields an installation where every unit is healthy and no
+    # DAG is ever registered --- see airflow-dag-processor-sysd.pcs.
+    cba_sysd_seed.sysdUnit("airflow-dag-processor", "airflow-dag-processor-sysd.pcs"),
 ]
 
 cba_sysd_seed.setup(

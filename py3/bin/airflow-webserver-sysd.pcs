@@ -34,6 +34,9 @@ After=network.target airflow-db.service
 Requires=airflow-db.service
 
 [Service]
+User=airflow
+Group=airflow
+EnvironmentFile=/etc/default/airflow
 ExecStart={execPath} api-server --port {_portNu}
 Restart=on-failure
 RestartSec=10

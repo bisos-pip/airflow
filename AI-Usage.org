@@ -1,0 +1,121 @@
+#+title: AI-Usage --- What bisos.airflow Actually Does
+
+This file is package-level, reusable knowledge about =bisos.airflow= itself ---
+the mechanism it provides and its actual current state --- for any downstream
+project that deploys Airflow the BISOS way and =@=-imports this file into its
+own =AI-Activity.org=. It deliberately excludes anything specific to a
+particular deployed instance (hostnames, ports, paths under =/root=,
+which =.pcs= copy is first on a given host's =PATH=, etc.) --- that belongs in
+the importing project's own file, not here, since it would be wrong for a
+different instance.
+
+* Purpose and Scope
+
+=bisos.airflow= (source at =py3/= in this repo) manages an Apache Airflow
+platform (webserver/API-server, scheduler, triggerer, metadata DB, DAG
+dev/testing) as a BISOS *Capability Bundle* (CBS/CBM) of systemd-planted
+Command Services --- positioned against both a single monolithic =airflow
+standalone= process and against distributed/HA executors (Celery,
+Kubernetes). Scope covers: package install (via =bisos.sbom=), systemd-unit
+generation for the four Airflow roles, and (via the assemble step)
+nginx-vhost + DNS exposure. It does *not* cover: templating =airflow.cfg=,
+choosing an executor, or bridging a DAG task into a separate Python venv ---
+see below.
+
+* systemd Units
+
+Four =*-sysd.pcs= "planted command service" files in =py3/bin/= each call
+=bisos.debian.systemd_seedInfo.setup(seedType="sysdSysUnit", ...)= with an
+f-string unit-file body:
+
+- =airflow-db-sysd.pcs= --- unit =airflow-db=, =ExecStart={airflow} db
+  migrate=, =Type=oneshot=, =RemainAfterExit=yes=.
+- =airflow-webserver-sysd.pcs= --- unit =airflow-webserver=, =ExecStart=
+  {airflow} api-server --port {_portNu}=, =Requires=/=After=
+  =airflow-db.service=.
+- =airflow-scheduler-sysd.pcs= --- unit =airflow-scheduler=, =ExecStart=
+  {airflow} scheduler=, same ordering.
+- =airflow-triggerer-sysd.pcs= --- unit =airflow-triggerer=, =ExecStart=
+  {airflow} triggerer=, same ordering.
+
+The =airflow= executable path is resolved dynamically via
+=pathPlus.whichBinPath("airflow")=, not hardcoded. All four are declared
+together in =airflow-cbs.pcs= (=sysdUnitsListAirflow=, with
+=sbom="airflow-sbom.pcs"= and =assemble="airflow-assemble.cs"=) and reached
+through the CBM pointer-leaf convention: a =cbmProc-<name>.spcs= file
+declaring =capabilityName= and =cbsSpec=, symlinked in from
+=/bisos/platform/sys/cbm/collective/...=.
+
+*Known gap*: the webserver unit template hardcodes Airflow 3.x's =api-server=
+subcommand (the 2.x name was =webserver=), but =airflow-sbom.pcs= only pins
+=apache-airflow>=2.9.0= --- a floor that would also accept Airflow 2.x, which
+lacks =api-server=. Materializing this CBS against an Airflow install at the
+stated floor, rather than an actual 3.x install, would produce a broken
+=airflow-webserver.service=. This is unresolved in the package as of this
+writing.
+
+* Executor and Backend: Not This Package's Decision
+
+No file in =bisos.airflow= templates =airflow.cfg= or sets =core.executor=.
+The four systemd units simply invoke =airflow db migrate/scheduler/
+triggerer/api-server= against whatever config already exists in
+=AIRFLOW_HOME= --- so executor (=LocalExecutor=, =SequentialExecutor=,
+=CeleryExecutor=, ...) and backend (SQLite, Postgres, ...) are entirely
+properties of the deployed instance, not something this package chooses or
+defaults. Note: the package's own =airflow-sbom.pcs= doc-string describes its
+minimal-setup recipe as "SQLite, SequentialExecutor", while the Blee panels
+elsewhere assert =LocalExecutor= --- these two in-package sources disagree
+with each other, so neither should be treated as documenting what any given
+deployed instance actually runs; check that instance's own =airflow.cfg=.
+
+* Exposure: nginx vhost + DNS
+
+Real, working code (not aspirational), chained through a single assemble
+step:
+
+=airflow-assemble.cs -i fullUpdate= calls =hereDns()= then =webVirtDom()=:
+- =hereDns()= shells out to =airflow-here-dns.pcs -i dnsCap_update= ---
+  wraps the external =bisos.dnsCap= package, resolving the target FQDN via
+  =/etc/hosts= (=dnsCap_seedInfo.DnsSpecMethod.etcHosts=), not real DNS.
+- =webVirtDom()= shells out to =airflow-wvd.pcs -i configFileUpdate=
+  (=--cls="configFile_nginxVd" --runAs=root=) then =-i webVd_enable= ---
+  wraps the external =bisos.webCap= package, building an nginx vhost via
+  =webVd_nginxSites.atPortSite(serverName=, proxyIp=, proxyPort=)=.
+
+The proxy port is looked up by name from the external =bisos.banna=
+package's TCP-port registry (=tcpPortsAssignedList.tcpPortsList[<name>]=)
+--- =bisos.airflow= performs the lookup but does not own or assign the port
+itself; that authority lives in =bisos.banna=.
+
+Re-run =airflow-assemble.cs -i fullUpdate= (or the two =.pcs= commands
+directly) to change vhost/DNS config so it stays reproducible; hand-editing
+the generated nginx config or hosts entry defeats that.
+
+* Cross-Venv DAG Code: Not This Package's Concern
+
+=bisos.airflow= has no opinion on how a DAG task reaches code installed in a
+Python venv other than Airflow's own --- no =PythonVirtualenvOperator=
+template, no subprocess/wrapper convention anywhere in its source. Airflow's
+own venv and any vendor/application code's venv are two independent things;
+bridging them (subprocess into the other venv's interpreter, a
+=BashOperator=, a =PythonVirtualenvOperator=, etc.) is left entirely to
+whoever writes the DAG, and is properly documented per-deployment, not here.
+
+* Package Maturity
+
+As of this writing there is no =bisos.airflow= Python library/CSU surface
+(=py3/bisos/airflow/__init__.py= is empty) --- =airflowAdmin.cs= and
+=quickAirflow.cs= both self-describe as "starting point, not yet complete"
+with open TODOs (e.g. reading =AIRFLOW_HOME=/port/fqdn from the package's own
+config rather than hardcoding, fleshing out DAG-level examples once a real
+CSU exists). Most of the Blee-panel narrative content beyond the
+=serverSetup= panel (Postgres-backed maintenance, monitoring/alerting,
+multi-user management, a =dynamic_remote_orchestrator= DAG) describes
+aspirational future scope with no corresponding code in this repo --- don't
+cite those panels as evidence of current, implemented behavior. Treat
+=README.org= / =_description.org= / =py3/README.rst= as the reliable,
+mutually-consistent sources for what's actually built.
+
+# Local Variables:
+# eval: (setq-local toc-org-max-depth 4)
+# End:

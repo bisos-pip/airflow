@@ -225,13 +225,15 @@ class airflowDirectCmnds(cs.Cmnd):
 
         cs.examples.menuSection('/Airflow Users/')
 
-        literal("airflow users list")
-        literal("airflow users create --role Admin --username admin --firstname a --lastname a --email a@a --password admin")
+        # Airflow 3 has no `airflow users` command group --- SimpleAuthManager
+        # replaced it. See airflowAdmin.cs -i usersInfo, and Web UI Hints below.
+        literal("airflow config get-value core auth_manager")
+        literal("airflow config get-value core simple_auth_manager_users   # username:role, NOT passwords")
 
         cs.examples.menuSection('/Airflow DAGs/')
 
         literal("airflow dags list")
-        literal("airflow dags list-runs -d <dag_id>")
+        literal("airflow dags list-runs <dag_id>        # dag_id is POSITIONAL, not -d")
         literal("airflow dags trigger <dag_id>")
         literal("airflow tasks list <dag_id>")
 
@@ -248,7 +250,47 @@ class airflowDirectCmnds(cs.Cmnd):
         literal("journalctl -u airflow-webserver.service -f")
         literal("journalctl -u airflow-scheduler.service -f")
         literal("journalctl -u airflow-triggerer.service -f")
+        literal("journalctl -u airflow-dag-processor.service -f")
         literal("ls -la $AIRFLOW_HOME/logs")
+
+        cs.examples.menuChapter('=Web UI Hints=')
+
+        cs.examples.menuSection('/Getting In/')
+
+        literal("# http://airflow.here         -- user: admin")
+        literal("sudo cat $AIRFLOW_HOME/simple_auth_manager_passwords.json.generated   # the password")
+        literal("airflow-sbom.pcs -i adminPasswd                                       # same, as root")
+        literal("# To set it:  echo '{\"admin\": \"airflow\"}' | sudo -u airflow tee that file")
+        literal("#             then: sudo systemctl restart airflow-webserver")
+
+        cs.examples.menuSection('/Where To Click/')
+
+        literal("# DAGs list   -- home page. Toggle at the left of each name pauses/unpauses.")
+        literal("#                New DAGs land PAUSED; nothing runs until unpaused.")
+        literal("# Trigger     -- the play button, on the DAG row or its detail page.")
+        literal("# Grid        -- runs x tasks, one coloured square per task instance.")
+        literal("# Graph       -- the dependency picture (start -> per-OSS tasks -> end).")
+        literal("# Gantt       -- shows pool queuing as a staircase: N concurrent, N = pool slots.")
+        literal("# Duration    -- per-task time across runs; where the slow OSSes show up.")
+        literal("# Logs tab    -- inside a task instance. stderr of the XU lands here.")
+
+        cs.examples.menuSection('/Reading What You See/')
+
+        literal("# A run is only as fast as its slowest single task --- pool size changes")
+        literal("# how many run at once, never how long one takes.")
+        literal("# Red across every task, none ever starting -> suspect the Execution API")
+        literal("# (AIRFLOW__CORE__EXECUTION_API_SERVER_URL), not the DAG.")
+        literal("# No DAGs listed at all -> suspect the dag-processor, not the scheduler:")
+        literal("#   airflow jobs check --job-type DagProcessorJob")
+
+        cs.examples.menuSection('/CLI Equivalents/')
+
+        literal("airflow dags trigger <dag_id>              # the play button")
+        literal("airflow dags unpause <dag_id>              # the toggle")
+        literal("airflow tasks test <dag_id> <task_id>      # run ONE task, no scheduling")
+        literal("airflow dags show <dag_id> --save /tmp/dag.png    # Graph view, needs graphviz pkg")
+        literal("# By hand the CLI needs BOTH: sudo -u airflow (DB is airflow-owned) and")
+        literal("# env AIRFLOW_HOME=... (/etc/default/airflow is read by systemd, not shells).")
 
         return(cmndOutcome)
 

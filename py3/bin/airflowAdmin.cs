@@ -95,9 +95,25 @@ import pathlib
 from bisos.banna import tcpPorts as bannaTcpPorts
 
 _airflowFqdn = "airflow.here"
-_airflowHome = pathlib.Path.home() / "airflow"
+# AIRFLOW_HOME of the systemd-managed installation, matching what
+# airflow-sbom.pcs writes to /etc/default/airflow and what the airflow-*.service
+# units read via EnvironmentFile. Deliberately NOT pathlib.Path.home()/"airflow":
+# the services run as User=airflow, so resolving the invoker's home would report
+# whoever happens to run this CS rather than the installation being administered.
+_airflowHome = pathlib.Path("/opt/airflow")
 _airflowDagsDir = _airflowHome / "dags"
 _airflowLogsDir = _airflowHome / "logs"
+_airflowUser = "airflow"
+_airflowBin = "/bisos/venv/py3/asc/bin/airflow"
+
+# Prefix for every by-hand CLI invocation. Both halves matter:
+#   sudo -u airflow  -- AIRFLOW_HOME and the SQLite metadata DB are airflow-owned;
+#                       running the CLI as root leaves root-owned -wal/-shm files
+#                       the services then cannot write.
+#   env AIRFLOW_HOME -- /etc/default/airflow is an EnvironmentFile read by systemd,
+#                       NOT by an interactive shell. Without this the CLI silently
+#                       operates on ~airflow/airflow and reports an empty install.
+_airflowCli = f"sudo -u {_airflowUser} env AIRFLOW_HOME={_airflowHome} {_airflowBin}"
 _airflowPortNu = bannaTcpPorts.tcpPortsAssignedList.tcpPortsList['airflow'].portNu
 
 """ #+begin_org
@@ -181,11 +197,14 @@ class examples(cs.Cmnd):
         cs.examples.menuChapter('=Airflow.Here -- systemd Units=')
         cmnd('servicesInfo', comment=" # links to the 4 airflow-*-sysd.pcs units")
 
+        cs.examples.menuChapter('=Airflow.Here -- DAGs=')
+        cmnd('dagsInfo', comment=" # list, trigger, pause/unpause, graph, parsing health")
+
         cs.examples.menuChapter('=Airflow.Here -- Users=')
-        cmnd('usersInfo', comment=" # how to list/create users; default admin/password note")
+        cmnd('usersInfo', comment=" # SimpleAuthManager: where users and passwords live")
 
         cs.examples.menuChapter('=Full Overview=')
-        cmnd('fullUpdate', comment=" # Show hostInfo + servicesInfo + usersInfo together")
+        cmnd('fullUpdate', comment=" # Show hostInfo + servicesInfo + dagsInfo + usersInfo")
 
         return(cmndOutcome)
 
@@ -224,6 +243,7 @@ class fullUpdate(cs.Cmnd):
 
         hostInfo().pyCmnd()
         servicesInfo().pyCmnd()
+        dagsInfo().pyCmnd()
         usersInfo().pyCmnd()
 
         return cmndOutcome
@@ -350,22 +370,107 @@ class usersInfo(cs.Cmnd):
             return failed(cmndOutcome)
 ####+END:
         if self.cmndDocStr(f""" #+begin_org
-** [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Print how to list/create Airflow users, and the default
-        admin/password convention for a fresh airflow.here install.
+** [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Users and passwords under Airflow 3's SimpleAuthManager.
+
+        NOTE: Airflow 3 has *no* ``airflow users`` command group. The Airflow 2
+        commands (``users list`` / ``users create`` / ``users reset-password``)
+        do not exist. Users are declared in configuration and passwords live in
+        a plaintext JSON file under AIRFLOW_HOME.
         #+end_org """): return(cmndOutcome)
 
         literal = cs.examples.execInsert
+        _pwFile = _airflowHome / "simple_auth_manager_passwords.json.generated"
 
-        cs.examples.menuSection('/List Existing Users/')
-        literal("airflow users list")
+        cs.examples.menuSection('/Who The Users Are -- declared in config, not a DB/')
+        literal(f"{_airflowCli} config get-value core auth_manager")
+        literal(f"{_airflowCli} config get-value core simple_auth_manager_users"
+                "   # username:role pairs -- NOT passwords")
 
-        cs.examples.menuSection('/Default Admin User (fresh install convention)/')
-        literal("# NOTYET -- change the password on any real/exposed installation")
-        literal("airflow users create --role Admin --username admin --firstname admin "
-                 "--lastname admin --email admin@airflow.here --password admin")
+        cs.examples.menuSection('/Current Password/')
+        literal(f"sudo cat {_pwFile}")
+        literal("airflow-sbom.pcs -i adminPasswd   # same value, read as root")
 
-        cs.examples.menuSection('/Reset a Password/')
-        literal("airflow users reset-password --username admin")
+        cs.examples.menuSection('/Set The admin Password/')
+        # SimpleAuthManager only fills in users MISSING from this file (see
+        # simple_auth_manager.py, "if user.username not in passwords"), so a
+        # hand-written entry survives restarts rather than being regenerated.
+        literal(f"""echo '{{"admin": "airflow"}}' | sudo -u {_airflowUser} tee {_pwFile}""")
+        literal(f"sudo -u {_airflowUser} chmod 600 {_pwFile}")
+        literal("sudo systemctl restart airflow-webserver   # required, re-reads the file")
+
+        cs.examples.menuSection('/Caution/')
+        literal("# SimpleAuthManager is dev-only by design: plaintext passwords,")
+        literal("# generated secrets printed to stdout/logs, no rotation mechanism.")
+        literal("# Use FAB or Keycloak auth managers for anything exposed.")
+
+        return cmndOutcome
+
+
+####+BEGIN: b:py3:cs:cmnd/classHead :cmndName "dagsInfo" :extent "verify" :comment "DAGs -- list, trigger, inspect" :parsMand "" :parsOpt "" :argsMin 0 :argsMax 0 :pyInv ""
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  CmndSvc-   [[elisp:(outline-show-subtree+toggle)][||]] <<dagsInfo>>  *DAGs -- list, trigger, inspect*  =verify= ro=cli   [[elisp:(org-cycle)][| ]]
+#+end_org """
+class dagsInfo(cs.Cmnd):
+    cmndParamsMandatory = [ ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @cs.track(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+             rtInv: cs.RtInvoker,
+             cmndOutcome: b.op.Outcome,
+    ) -> b.op.Outcome:
+        """DAGs -- list, trigger, inspect"""
+        failed = b_io.eh.badOutcome
+        callParamsDict = {}
+        if self.invocationValidate(rtInv, cmndOutcome, callParamsDict, None).isProblematic():
+            return failed(cmndOutcome)
+####+END:
+        if self.cmndDocStr(f""" #+begin_org
+** [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Listing, triggering and inspecting DAGs from the CLI.
+
+        Every invocation is prefixed with ``sudo -u airflow env AIRFLOW_HOME=...``
+        -- see the _airflowCli comment near the top of this file for why both
+        halves are required.
+        #+end_org """): return(cmndOutcome)
+
+        literal = cs.examples.execInsert
+        _dag = "<dag_id>"
+
+        cs.examples.menuSection('/What Is Registered/')
+        literal(f"{_airflowCli} dags list")
+        literal(f"{_airflowCli} dags list-import-errors   # empty output is good")
+        literal(f"{_airflowCli} dags list-runs {_dag}     # dag_id is POSITIONAL, not -d")
+
+        cs.examples.menuSection('/Trigger A Run At Will/')
+        literal(f"{_airflowCli} dags trigger {_dag}")
+        literal(f"{_airflowCli} dags trigger {_dag} -r <run-id>   # label it, e.g. by config under test")
+        literal("# A manual trigger QUEUES rather than starts when max_active_runs=1")
+        literal("# and a scheduled run is already active.")
+
+        cs.examples.menuSection('/Pause and Unpause/')
+        literal(f"{_airflowCli} dags pause {_dag}")
+        literal(f"{_airflowCli} dags unpause {_dag}")
+        literal("# New DAGs land PAUSED. Nothing runs until unpaused.")
+
+        cs.examples.menuSection('/Tasks Of A DAG/')
+        literal(f"{_airflowCli} tasks list {_dag}")
+        literal(f"{_airflowCli} tasks states-for-dag-run {_dag} <run_id>")
+        literal(f"{_airflowCli} tasks test {_dag} <task_id>"
+                "   # run ONE task now, no scheduling, no unpause needed")
+
+        cs.examples.menuSection('/Graphical Dependencies/')
+        literal("# The web UI Graph view is the usual answer: http://" + _airflowFqdn)
+        literal(f"{_airflowCli} dags show {_dag}                  # needs the graphviz pip pkg")
+        literal(f"{_airflowCli} dags show {_dag} --save /tmp/{_dag}.png")
+
+        cs.examples.menuSection('/Health Of The Parsing Layer/')
+        # Airflow 3 parses DAG files in a standalone dag-processor, not in the
+        # scheduler. With it absent every unit looks healthy, the UI serves, and
+        # no DAG is ever registered -- this is the check that distinguishes that
+        # case from a working install.
+        literal(f"{_airflowCli} jobs check --job-type DagProcessorJob")
+        literal(f"{_airflowCli} jobs check --job-type SchedulerJob")
 
         return cmndOutcome
 

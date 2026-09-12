@@ -3,7 +3,7 @@
 ####+BEGIN: b:prog:file/particulars :authors ("./inserts/authors-mb.org")
 """ #+begin_org
 * *[[elisp:(org-cycle)][| Particulars |]]* :: Authors, version
-** This File: /bisos/core/bsip/bin/airflow-scheduler-sysd.cs
+** This File: /bisos/core/bsip/bin/airflow-dag-processor-sysd.cs
 ** Authors: Mohsen BANAN, http://mohsen.banan.1.byname.net/contact
 #+end_org """
 ####+END:
@@ -11,6 +11,15 @@
 """ #+begin_org
 * Panel::  [[file:/bisos/panels/bisos-apps/NameOfThePanelComeHere/_nodeBase_/fullUsagePanel-en.org]]
 * Overview and Relevant Pointers
+
+Airflow 3 moved DAG-file parsing out of the scheduler into a standalone
+dag-processor process. Without this unit the scheduler starts cleanly, the
+api-server serves, and the metadata DB migrates --- but no DAG file is ever
+parsed into the DB, so `airflow dags list` stays empty and nothing can run.
+That failure is silent: every other unit looks healthy.
+
+This unit did not exist while the package targeted the Airflow 2 process set
+(db / webserver / scheduler / triggerer).
 #+end_org """
 
 from bisos.debian import systemd_seedInfo
@@ -26,7 +35,7 @@ def sysdUnitFileFunc() -> str | None:
 
     templateStr = f"""
 [Unit]
-Description=Airflow Scheduler
+Description=Airflow DAG Processor
 After=network.target airflow-db.service
 Requires=airflow-db.service
 
@@ -34,7 +43,7 @@ Requires=airflow-db.service
 User=airflow
 Group=airflow
 EnvironmentFile=/etc/default/airflow
-ExecStart={execPath} scheduler
+ExecStart={execPath} dag-processor
 Restart=on-failure
 RestartSec=10
 
@@ -45,6 +54,6 @@ WantedBy=multi-user.target
 
 systemd_seedInfo.setup(
     seedType="sysdSysUnit",
-    sysdUnitName="airflow-scheduler",
+    sysdUnitName="airflow-dag-processor",
     sysdUnitFileFunc=sysdUnitFileFunc,
 )
