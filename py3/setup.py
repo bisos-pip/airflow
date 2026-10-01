@@ -43,7 +43,7 @@ def longDescription():
 # b:py3:pypi:setup/version Arguments  :forSys t :forPyPi t :constant "666"
 ####+BEGIN: b:py3:pypi:setup/version :comment "Auto Detected"
 
-# ./pypiUploadVer DID NOT exist -- forPypiVersion=0.12 -- forLocalVersion=0.1 -- constant=NA
+# ./pypiUploadVer DID NOT exist -- forPypiVersion=0.13 -- forLocalVersion=0.1 -- constant=NA
 def pkgVersion():
         return '0.1'
 
@@ -77,6 +77,7 @@ scripts = [
 'bin/airflowAdmin.cs',
 'bin/airflow-assemble.cs',
 'bin/airflow-cbs.pcs',
+'bin/airflow-dag-processor-sysd.pcs',
 'bin/airflow-db-sysd.pcs',
 'bin/airflow-here-dns.pcs',
 'bin/airflow-sbom.pcs',
@@ -85,8 +86,6 @@ scripts = [
 'bin/airflow-webserver-sysd.pcs',
 'bin/airflow-wvd.pcs',
 'bin/cbmProc-airflow.spcs',
-'bin/cbmProc.control',
-'bin/cbmProc.status',
 'bin/quickAirflow.cs',
 ]
 ####+END:
