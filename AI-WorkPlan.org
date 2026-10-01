@@ -115,23 +115,146 @@ Goal: Update and implement images, panels and tests workplan.
 
 * Stage 4 TODOs
 ** +
-** TODO [#A] Accomplish /bisos/git/bxRepos/bisos-pip/airflow/py3/panels/bisos.airflow/AI-WorkPlan.org :aiAndMe:
+** TODO [#C] <<4.1>> Accomplish /bisos/git/bxRepos/bisos-pip/airflow/py3/panels/bisos.airflow/AI-WorkPlan.org :aiAndMe:
 SCHEDULED: <2026-09-21 Mon 12:11>
 Update its TODOs and Go there and Accomplish its TODOs.
------ AI Results: ------
+----- Results: ------
 
-** TODO [#A] Create a starting point py3/tests/ :aiAndMe:
-SCHEDULED: <2026-09-21 Mon 12:16>
-Capture testing of added features.
------ AI Results: ------
-
-** DONE [#A] Accomplish /bisos/git/bxRepos/bisos-pip/airflow/py3/images/AI-WorkPlan.org :aiAndMe:
+** DONE [#C] <<4,2>> Accomplish /bisos/git/bxRepos/bisos-pip/airflow/py3/images/AI-WorkPlan.org :aiAndMe:
 SCHEDULED: <2026-09-01 Tue 13:01>
 Go there and Accomplish its TODOs.
------ AI Results: ------
+----- Results: ------
 
+** TODO [#A] <<4.3>> Stale copies in =/bisos/asc/web/bin/= shadow the package on PATH :aiAndMe:
+SCHEDULED: <2026-10-01 Thu>
+:PROPERTIES:
+:REPO: /bisos/git/bxRepos/bisos/asc/web
+:FOUND: 2026-09-11
+:PRIORITY: highest open risk
+:END:
+
+- *What*: =/bisos/asc/web/bin/= holds 8 =airflow-*.pcs= files --- the
+  predecessor installation, from before =bisos.airflow= existed as a
+  package. They come *first* on PATH:
+
+  #+begin_example
+  airflow-webserver-sysd.pcs  -> /bisos/asc/web/bin/airflow-webserver-sysd.pcs
+  airflow-sbom.pcs            -> /bisos/asc/web/bin/airflow-sbom.pcs
+  airflow-cbs.pcs             -> /bisos/asc/web/bin/airflow-cbs.pcs
+  #+end_example
+
+- *Why it matters*: those copies =diff= as pre-migration --- zero
+  occurrences of =User=airflow= or =airflowAcctEnvSetup=. Invoking any of
+  them *by bare name* re-materializes the **root-era** units over the top of
+  the migrated installation, silently and apparently successfully.
+- *Why nothing broke*: every invocation during the migration used an
+  explicit repo path. Deliberate, but not a durable safeguard.
+- *Action*: retire the =/bisos/asc/web/bin/= airflow copies, or ensure the
+  package wins on PATH.
+----- Results: ------
+
+** TODO [#B] <<4.3.1>> airflow-sbom.pcs includes postgress. There should be a postgress-sbom.pcs :aiAndMe:
+SCHEDULED: <2026-10-01 Thu>
+:PROPERTIES:
+:ORIGIN: Mohsen
+:REPO: /bisos/git/bxRepos/bisos-pip/airflow
+:END:
+
+How would this impact airflow  user and other  aspects that are now intertwined.
+----- Results: ------
+
+
+** TODO [#A] <<4.4>> No =bisos.airflow= library surface :aiAndMe:
+SCHEDULED: <2026-10-01 Thu>
+:PROPERTIES:
+:REPO: /bisos/git/bxRepos/bisos-pip/airflow
+:FOUND: 2026-09-10
+:END:
+
+=py3/bisos/airflow/__init__.py= is empty. =airflowAdmin.cs= and
+=quickAirflow.cs= both self-describe as "starting point --- not yet
+complete". The package is CLI/systemd glue only, so there is nowhere natural
+for shared constants or config introspection.
+----- Results: ------
+
+** TODO [#A] <<4.5>> Version floor admits an Airflow that cannot work :aiAndMe:
+SCHEDULED: <2026-10-01 Thu>
+:PROPERTIES:
+:REPO: /bisos/git/bxRepos/bisos-pip/airflow
+:FOUND: 2026-09-10
+:END:
+
+=airflow-sbom.pcs= pins =apache-airflow >=2.9.0=, while
+=airflow-webserver-sysd.pcs= hardcodes =api-server= --- the Airflow 3.x
+subcommand name (2.x uses =webserver=). An install satisfying the declared
+floor produces a broken =airflow-webserver.service=. Latent; masked today
+only because 3.3.1 is what actually installs.
+
+*Action*: raise the floor to =>=3.0= (or pin exactly), or make the
+subcommand version-aware.
+----- Results: ------
+
+** TODO [#A] <<4.6>> =AIRFLOW_HOME= duplicated with nothing enforcing agreement :aiAndMe:
+SCHEDULED: <2026-10-01 Thu>
+:PROPERTIES:
+:REPO: /bisos/git/bxRepos/bisos-pip/airflow
+:FOUND: 2026-09-11
+:END:
+
+This relates to [[4.4]] -- Should be done together.
+
+=_airflowHome = "/opt/airflow"= is declared independently in
+=py3/bin/airflow-sbom.pcs= and =py3/bin/airflowAdmin.cs=, and must *also*
+match what =airflowAcctEnvSetup()= writes into =/etc/default/airflow=, which
+is what the four units read via =EnvironmentFile=. Three places, no shared
+source.
+
+This is =airflowAdmin.cs='s own standing TODO ("Read AIRFLOW_HOME / port /
+fqdn from bisos.airflow's own config rather than hardcoding"). The migration
+fixed a worse bug there --- =pathlib.Path.home() / "airflow"=, which
+resolved to *the invoking user's* home rather than the installation's ---
+but replaced it with a second hardcoded constant rather than resolving the
+TODO. Blocked on there being nowhere to put it (see next).
+----- Results: ------
+
+
+** TODO [#C] <<4.7>> Documentation falsified by the root -> airflow-user migration :aiAndMe:
+SCHEDULED: <2026-10-01 Thu>
+:PROPERTIES:
+:REPO: /bisos/git/bxRepos/bisos-pip/airflow
+:FOUND: 2026-09-11
+:END:
+
+All still describe the root-based installation:
+
+- =README.org= --- the "4 systemd Units and DB Init" section.
+- =py3/panels/bisos.airflow/serverSetup/_nodeBase_/fullUsagePanel-en.org=.
+- =AI-Usage.org= --- describes the unit templates with no mention of
+  =User=airflow= or =EnvironmentFile=. *Also still untracked in git* (=??=);
+  never committed.
+- =AI-DevStatus.org= --- still template placeholders for Architecture, What
+  Works, What Is Untested, Key Design Decisions.
+
+Pre-existing and separate: most Blee-panel content beyond =serverSetup=
+(Postgres maintenance, monitoring/alerting, multi-user management, a
+=dynamic_remote_orchestrator= DAG) describes scope that does not exist in
+code. Do not cite those panels as evidence of implemented behaviour.
+----- Results: ------
+
+** TODO [#A] <<4.8>> Move AI-Usage.org to Airflow-Usage Panel
+:PROPERTIES:
+:ORIGIN: Mohsen
+:REPO: /bisos/git/bxRepos/bisos-pip/airflow
+:FOUND: 2026-09-11
+:END:
+
+Some of what is in AI-Usage belongs to AI-DevStatus. AI-WorkPlan.org should mention
+Airflow-Usage Panel.
+This relates to [[4.1]]
+----- Results: ------
 
 ** -
+
 
 
 

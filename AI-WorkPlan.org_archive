@@ -232,3 +232,15 @@ shebang) that =airflowAdmin.cs -i fullUpdate= produces the correct output:
 =echo airflow.here=, =echo 24006=, =http://airflow.here=, the
 =AIRFLOW_HOME= echo, the DAG dir echo+ls, and the logs section --
 all present and correctly ordered.
+
+* DONE [#A] Create a starting point py3/tests/ :aiAndMe:
+CLOSED: [2026-10-01 Thu 09:27] SCHEDULED: <2026-09-21 Mon 12:16>
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-10-01 Thu 09:27
+:ARCHIVE_FILE: /bxRepos/bisos-pip/airflow/AI-WorkPlan.org
+:ARCHIVE_OLPATH: Stage 4 TODOs
+:ARCHIVE_CATEGORY: AI-WorkPlan
+:ARCHIVE_TODO: DONE
+:END:
+Capture testing of added features.
+----- AI Results: ------
