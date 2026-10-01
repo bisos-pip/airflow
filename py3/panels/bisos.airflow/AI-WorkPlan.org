@@ -73,6 +73,71 @@ migrate=, =RemainAfterExit=yes=) and the three long-running units
 so migration completes first. Noted the CBS/CBM planting mechanism
 (=airflow-cbs.pcs= / =cbmProc-airflow.spcs=).
 
+** DONE [#A] <<p1.2>> Airflow-Usage panel and top-level overview (from repo [[4.8]]) :ai:
+CLOSED: [2026-10-01 Thu]
+Create =./airflowUsage/= as the authoritative "what =bisos.airflow= does"
+panel, replacing the repo-root =AI-Usage.org=. Replace the blank top-level
+overview with a summary and a child-panel table.
+----- AI Results: ------
+Done as part of repo TODO 4.8 --- see its results there. Pending: the
+navigator dblocks need regenerating in Blee.
+
+** DONE [#A] <<p1.3>> Correct =./serverSetup/= for the airflow-user installation :ai:
+CLOSED: [2026-10-01 Thu]
+The units table says 4 units: there is no =dag-processor=, no =User=airflow=
+or =EnvironmentFile=, and =airflow-db= is not ordered after
+=postgresql.service=. The lower half (below =** -B|=) is the pre-package,
+root-era manual recipe: =~/airflow=, a hand-made venv,
+=apache-airflow==2.10.0=, a password-bearing =airflow_user=, and the removed
+=airflow db init=. It contradicts what the package does.
+----- AI Results: ------
+- The overview placeholder is replaced with a one-paragraph scope and a
+  pointer to =airflowUsage=.
+- The executor claim is corrected: the package does not set it;
+  =LocalExecutor= comes from the instance's =airflow.cfg=.
+- "The 4 systemd Units" is now "The 5 systemd Units":
+  - adds =airflow-dag-processor= and why it is required on Airflow 3;
+  - states =User=airflow=, =EnvironmentFile=/etc/default/airflow= and
+    =airflow-db='s ordering after =postgresql.service=;
+  - the CBM leaf path is now the real one.
+- The root-era manual recipe is removed. A short "Not a Manual Recipe"
+  section says why and points to =airflow-sbom.pcs -i sbom_fullUpdate= and
+  the CBM leaf.
+
+** DONE [#B] <<p1.4>> Mark the five aspirational panels as such :ai:
+CLOSED: [2026-10-01 Thu]
+=dagDevelopmentTesting=, =maintenanceAndDb=, =monitoringLoggingAlerting=,
+=scalingExecutors= and =userManagement= describe scope with no code in the
+package. Some of their recipes also conflict with the actual installation.
+Replace each blank "Overview Comes Here." with a status note: aspirational,
+pointer to =airflowUsage=, and the specific known conflicts. Do not rewrite
+the bodies --- whether to keep, implement or drop that scope is Mohsen's call.
+----- AI Results: ------
+Each of the five panels now opens with "Status: Aspirational (noted 2026-10-01)".
+The note gives a pointer to =airflowUsage=, says to run the CLI as =airflow= with
+=/etc/default/airflow=, and lists that panel's specific conflicts with the real
+installation, checked against the live =airflow.cfg=:
+- =userManagement=: =airflow users create= is FAB-only, while the instance
+  runs =SimpleAuthManager=. =web_server_port= is an Airflow 2 option. The
+  UI is reached through nginx, not on =0.0.0.0:8080=.
+- =maintenanceAndDb=: the DB is =airflow=/=airflow= with peer auth, so the
+  =pg_dump= line is wrong as written.
+- The =/home/airflow/{config,scripts,remote_outputs}= paths are not package
+  locations.
+- =dynamic_remote_orchestrator= and =run_remote_job.sh= don't exist.
+- Executor tuning is per-instance.
+
+Bodies left untouched.
+
+** DONE [#B] <<p1.5>> Fill this subproject's =AI-DevStatus.org= :ai:
+CLOSED: [2026-10-01 Thu]
+It has only template text. Record the panel tree, which panels are
+authoritative, and the dblock-regeneration debt.
+----- AI Results: ------
+Filled in Current State (a node/role/status table), Key Facts (=airflowUsage= is
+=@=-imported downstream, so it must stay package-level) and Pending (Blee
+dblock regeneration; no =runResult= dblocks while the commands are off PATH).
+
 ** -
 
 

@@ -20,15 +20,21 @@ webserver (API server), scheduler, triggerer, metadata database, and DAG
 development/testing --- as a BISOS Capability Bundle (CBS/CBM) of
 =systemd=-planted Command Services.
 
-With CBM (Capability Bundle Materialization), Airflow's four processes are
+With CBM (Capability Bundle Materialization), Airflow's five roles are
 installed as independent host =systemd= units rather than one monolithic
 =airflow standalone= process: a planted pointer leaf
 (=cbmProc.spcs=) subprocess-invokes a Capability Bundle Specification
-(=airflow-cbs.pcs=) which declares package installation (sbom), the four
+(=airflow-cbs.pcs=) which declares package installation (sbom), the five
 =systemd= units, and the assembly step needed to bring up a working
 =airflow.here= installation on a single host. This gives independent
 start/stop/status and independent logs per role, without the operational
 overhead of a distributed executor (Celery/Kubernetes) or containers.
+
+Airflow runs as a dedicated =airflow= system account, not root, with
+=AIRFLOW_HOME=/opt/airflow= and a PostgreSQL metadata DB, and it targets
+Airflow 3. The full description is in the
+[[file:./py3/panels/bisos.airflow/airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]]
+Blee panel.
 
 #+BEGIN: b:org:pypi:readme/pkgDocumentation :pkgName "airflow-cs" :comment "basic"
 
@@ -41,7 +47,7 @@ The figure below shows the top-down layering of =airflow.here='s Capability
 Materialization: the planted CBM pointer leaf
 (=/bisos/platform/sys/cbm/collective/hereWeb/airflow/cbmProc.spcs=) points to
 (and does *not* duplicate) the CBS (=py3/bin/airflow-cbs.pcs=), which declares
-the bundle of =airflow-sbom.pcs=, the 4 =airflow-*-sysd.pcs= units, and
+the bundle of =airflow-sbom.pcs=, the 5 =airflow-*-sysd.pcs= units, and
 =airflow-assemble.cs=. =py3/bin/airflowAdmin.cs= sits below all of that as the
 day-to-day admin-facing CS an operator runs against the materialized
 installation.
@@ -56,7 +62,7 @@ installation.
 * Table of Contents     :TOC:
 - [[#overview][Overview]]
 - [[#capability-materialization][Capability Materialization]]
-- [[#the-4-systemd-units-and-db-init][The 4 systemd Units and DB Init]]
+- [[#the-5-systemd-units-and-db-init][The 5 systemd Units and DB Init]]
 - [[#installation][Installation]]
   - [[#installation-with-pip][Installation With pip]]
   - [[#installation-with-pipx][Installation With pipx]]
@@ -68,28 +74,35 @@ installation.
 - [[#documentation-and-blee-panels][Documentation and Blee-Panels]]
 - [[#support][Support]]
 
-* The 4 systemd Units and DB Init
+* The 5 systemd Units and DB Init
 
-Four planted =*-sysd.pcs= units live in =py3/bin/=, all delegating to the same
-=airflow= CLI executable, each running a different sub-command:
+Five planted =*-sysd.pcs= units live in =py3/bin/=, all delegating to the same
+=airflow= CLI executable, each running a different sub-command. All five run
+as =User=airflow= and read =EnvironmentFile=/etc/default/airflow=, which sets
+=AIRFLOW_HOME=/opt/airflow=, the PostgreSQL connection string and the Airflow 3
+API URLs. =airflow-sbom.pcs= creates the account, the directories, that file
+and the metadata DB.
 
-| Unit                          | Airflow role                  | =ExecStart= sub-command         | Type                       | Ordering                            |
-|-------------------------------+--------------------------------+----------------------------------+----------------------------+--------------------------------------|
-| =airflow-db-sysd.pcs=          | DB migration                  | =airflow db migrate=             | =oneshot=, =RemainAfterExit=yes= | =After=network.target=; runs first  |
-| =airflow-webserver-sysd.pcs=   | API/Web server                | =airflow api-server --port ...=  | long-running =simple=       | =Requires=/=After=airflow-db.service= |
-| =airflow-scheduler-sysd.pcs=   | Scheduler                     | =airflow scheduler=              | long-running =simple=       | =Requires=/=After=airflow-db.service= |
-| =airflow-triggerer-sysd.pcs=   | Triggerer (deferrable tasks)  | =airflow triggerer=              | long-running =simple=       | =Requires=/=After=airflow-db.service= |
+| Unit                             | Airflow role                  | =ExecStart= sub-command         | Type                             | Ordering                                |
+|----------------------------------+-------------------------------+---------------------------------+----------------------------------+-----------------------------------------|
+| =airflow-db-sysd.pcs=            | DB migration                  | =airflow db migrate=            | =oneshot=, =RemainAfterExit=yes= | =Requires=/=After=postgresql.service=   |
+| =airflow-webserver-sysd.pcs=     | API server + web UI           | =airflow api-server --port ...= | long-running                     | =Requires=/=After=airflow-db.service=   |
+| =airflow-scheduler-sysd.pcs=     | Scheduler                     | =airflow scheduler=             | long-running                     | =Requires=/=After=airflow-db.service=   |
+| =airflow-triggerer-sysd.pcs=     | Triggerer (deferrable tasks)  | =airflow triggerer=             | long-running                     | =Requires=/=After=airflow-db.service=   |
+| =airflow-dag-processor-sysd.pcs= | DAG file parsing              | =airflow dag-processor=         | long-running                     | =Requires=/=After=airflow-db.service=   |
 
-=airflow-db-sysd.pcs= is a =oneshot= unit with =RemainAfterExit=yes=: it runs
-=airflow db migrate= once to bring the metadata database schema up to date,
-then reports itself "active" without staying resident. The three long-running
-units each declare =Requires=/=After=airflow-db.service=, so systemd
-guarantees the migration has been attempted before any of the three service
-processes starts.
+=airflow-db-sysd.pcs= is a =oneshot= unit with =RemainAfterExit=yes=: once
+PostgreSQL is up, it runs =airflow db migrate= to bring the metadata schema up
+to date, then reports itself "active" without staying resident. The four
+long-running units each declare =Requires=/=After=airflow-db.service=, so
+systemd guarantees the migration has been attempted before any of them
+starts. =airflow-dag-processor= is required on Airflow 3, which parses DAG
+files in a standalone process; without it no DAG is ever registered.
 
-All four units, together with package installation, are declared by
-=py3/bin/airflow-cbs.pcs= and materialized at this host via
-=py3/bin/cbmProc-airflow.spcs=.
+All five units, together with package installation, are declared by
+=py3/bin/airflow-cbs.pcs= and materialized on this host by the CBM leaf
+=/bisos/platform/sys/cbm/collective/hereWeb/airflow/cbmProc.spcs= (the package
+ships the same pointer as =py3/bin/cbmProc-airflow.spcs=).
 
 * Installation
 
@@ -121,12 +134,13 @@ The following commands are made available:
 
 - =airflowAdmin.cs= --- day-to-day admin CS for this host's =airflow.here= installation.
 - =quickAirflow.cs= --- direct-command cheat sheet for the =airflow= CLI and its =systemd= units.
-- =airflow-cbs.pcs= --- Capability Bundle Specification: declares sbom + the 4 sysd units + assemble.
+- =airflow-cbs.pcs= --- Capability Bundle Specification: declares sbom + the 5 sysd units + assemble.
 - =cbmProc-airflow.spcs= --- planted CBM pointer that materializes the CBS at this host.
-- =airflow-sbom.pcs= --- package installation via [[https://github.com/bisos-pip/sbom][bisos.sbom]].
-- =airflow-db-sysd.pcs=, =airflow-webserver-sysd.pcs=, =airflow-scheduler-sysd.pcs=, =airflow-triggerer-sysd.pcs= --- the 4 systemd units.
-- =airflow-assemble.cs= --- assembly/glue step.
+- =airflow-sbom.pcs= --- package installation via [[https://github.com/bisos-pip/sbom][bisos.sbom]], plus the =airflow= account, =/etc/default/airflow= and the PostgreSQL metadata DB.
+- =airflow-db-sysd.pcs=, =airflow-webserver-sysd.pcs=, =airflow-scheduler-sysd.pcs=, =airflow-triggerer-sysd.pcs=, =airflow-dag-processor-sysd.pcs= --- the 5 systemd units.
+- =airflow-assemble.cs= --- assembly/glue step (DNS + nginx vhost).
 - =airflow-here-dns.pcs= --- registers the =.here= fake-domain DNS entry (=airflow.here=).
+- =airflow-wvd.pcs= --- the nginx virtual host for =airflow.here= (via [[https://github.com/bisos-pip/webCap][bisos.webCap]]).
 
 * Usage
 
@@ -137,7 +151,7 @@ sub-commands:
 
 #+begin_src bash
 airflowAdmin.cs -i hostInfo       # fqdn, port, AIRFLOW_HOME, DAG dir, log dir
-airflowAdmin.cs -i servicesInfo   # links for operating the 4 systemd units
+airflowAdmin.cs -i servicesInfo   # links for operating the systemd units
 airflowAdmin.cs -i usersInfo      # list/create users; default admin/password
 airflowAdmin.cs -i fullUpdate     # all three together
 #+end_src
@@ -158,13 +172,14 @@ to be expanded as the package develops):
 
 - =py3/bin/airflowAdmin.cs= --- day-to-day admin CS (hostInfo, servicesInfo, usersInfo, fullUpdate).
 - =py3/bin/quickAirflow.cs= --- direct-command cheat sheet for the =airflow= CLI and systemd units.
-- =py3/bin/airflow-cbs.pcs= --- CBS declaring the bundle (sbom + 4 sysd units + assemble).
+- =py3/bin/airflow-cbs.pcs= --- CBS declaring the bundle (sbom + 5 sysd units + assemble).
 - =py3/bin/cbmProc-airflow.spcs= --- planted CBM pointer leaf that materializes the CBS.
-- =py3/bin/airflow-sbom.pcs= --- package installation via [[https://github.com/bisos-pip/sbom][bisos.sbom]].
+- =py3/bin/airflow-sbom.pcs= --- package installation via [[https://github.com/bisos-pip/sbom][bisos.sbom]], the =airflow= account and the PostgreSQL metadata DB.
 - =py3/bin/airflow-db-sysd.pcs= --- oneshot DB migration unit.
-- =py3/bin/airflow-webserver-sysd.pcs=, =airflow-scheduler-sysd.pcs=, =airflow-triggerer-sysd.pcs= --- the three long-running units.
-- =py3/bin/airflow-assemble.cs= --- assembly/glue step.
+- =py3/bin/airflow-webserver-sysd.pcs=, =airflow-scheduler-sysd.pcs=, =airflow-triggerer-sysd.pcs=, =airflow-dag-processor-sysd.pcs= --- the four long-running units.
+- =py3/bin/airflow-assemble.cs= --- assembly/glue step (DNS + nginx vhost).
 - =py3/bin/airflow-here-dns.pcs= --- =.here= fake-domain DNS registration for =airflow.here=.
+- =py3/bin/airflow-wvd.pcs= --- nginx virtual host for =airflow.here=.
 - =py3/images/airflow-graphviz.pcs= --- source for the Capability Materialization figure.
 - =py3/tests/verify.sh= --- smoke test for =airflowAdmin.cs= and =quickAirflow.cs=.
 - =py3/setup.py=, =py3/pypiProc.sh= --- PyPI packaging (setup.py is dblock-driven; do not hand-edit).
@@ -194,7 +209,9 @@ Blee-Panels are in the =./py3/panels= directory. From within Blee and
 BISOS these panels are accessible under the Blee "Panels" menu.
 
 See [[file:./py3/panels/bisos.airflow/_nodeBase_/fullUsagePanel-en.org]]
-for a starting point.
+for a starting point, and
+[[file:./py3/panels/bisos.airflow/airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]]
+for the full description of what the package does.
 
 /bisos.airflow/ is best developed with [[https://github.com/bx-blee][Blee]], the /By* BISOS
 Libre-Halaal Emacs Environment/ --- a layer on top of Emacs and BISOS

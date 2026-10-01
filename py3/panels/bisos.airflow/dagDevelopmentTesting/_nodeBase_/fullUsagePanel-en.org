@@ -36,7 +36,18 @@
 * [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| *Overview and Use Cases:* |]] <<Panel>>   /::Blank Starting Point::/  [[elisp:(org-shifttab)][<)]] E|
 ####+END
 ** +
-** Overview Comes Here.
+*** Status: Aspirational (noted 2026-10-01)
+
+The notes below describe scope that has *no corresponding code* in =bisos.airflow=.
+Don't cite them as evidence of implemented behaviour. For what the package actually
+does, see the [[file:../../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]] panel.
+
+Run Airflow CLI commands as =airflow= with the units' environment (=/etc/default/airflow=);
+=AIRFLOW_HOME= is =/opt/airflow=.
+
+Known conflicts with the actual installation:
+- The =dynamic_remote_orchestrator= DAG and its server-list file are not part of the package.
+- On Airflow 3, DAG files are parsed by =airflow-dag-processor.service=, not by the scheduler.
 ** -B|
 * +
 * Overview  -- DAG Development & Testing (Dynamic File Parsing)

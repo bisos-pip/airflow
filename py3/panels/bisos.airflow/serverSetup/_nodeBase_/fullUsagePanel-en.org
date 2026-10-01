@@ -36,7 +36,10 @@
 * [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| *Overview and Use Cases:* |]] <<Panel>>   /::Blank Starting Point::/  [[elisp:(org-shifttab)][<)]] E|
 ####+END
 ** +
-** Overview Comes Here.
+
+Where =bisos.airflow= sits among the ways of running Airflow, and how its systemd units
+are arranged. For the full layout (account, directories, environment, metadata DB,
+exposure, commands) see the [[file:../../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]] panel.
 
 *** Deployment Options
 
@@ -52,82 +55,55 @@ size/scope profiles; the columns are *how the Airflow processes are supervised*.
 | largescale     | not applicable                  | systemd units per host, Celery/K8s executor across many hosts | Kubernetes / managed Airflow (MWAA, Composer, Astronomer) |
 |----------------+---------------------------------+---------------------------------+---------------------------------|
 
-*What we have for =airflow.here=* is the *standalone × systemd* cell: a single host,
-Airflow's built-in =LocalExecutor= (no Celery/Redis), each Airflow role planted as its
-own =systemd= unit via a CBS/CBM (=airflow-cbs.pcs= / =cbmProc-airflow.spcs=) rather than
-one monolithic =airflow standalone= process. This gives independent start/stop/status
-and independent logs per role, without the operational overhead of a distributed
-executor or containers.
+*What we have for =airflow.here=* is the *standalone × systemd* cell: a single host with
+no Celery/Redis, each Airflow role planted as its own =systemd= unit via a CBS/CBM
+(=airflow-cbs.pcs= / =cbmProc-airflow.spcs=), rather than one monolithic
+=airflow standalone= process. This gives independent start/stop/status and independent
+logs per role, without the operational overhead of a distributed executor or
+containers. The package does not set the executor; a single-host instance normally
+runs =LocalExecutor=, set in its own =airflow.cfg=.
 
-*** The 4 systemd Units and DB Init
+*** The 5 systemd Units and DB Init
 
-Four planted =*-sysd.pcs= units live in =py3/bin/=, all delegating to the same
+Five planted =*-sysd.pcs= units live in =py3/bin/=, all delegating to the same
 =airflow= CLI executable (via =systemd_seedInfo.setup()=), each running a different
-sub-command:
+sub-command. All five run as =User=airflow= / =Group=airflow= and take their
+environment (=AIRFLOW_HOME=/opt/airflow=, the PostgreSQL connection string, the
+Airflow 3 API URLs) from =EnvironmentFile=/etc/default/airflow=.
 
-| Unit                         | Airflow role      | =ExecStart= sub-command        | Type                    | Ordering                              |
-|-------------------------------+--------------------+---------------------------------+--------------------------+----------------------------------------|
-| =airflow-db-sysd.pcs=          | DB migration       | =airflow db migrate=            | =oneshot=, =RemainAfterExit=yes= | =After=network.target=; runs first     |
-| =airflow-webserver-sysd.pcs=   | API/Web server     | =airflow api-server --port ...= | long-running =simple=    | =Requires=/=After=airflow-db.service= |
-| =airflow-scheduler-sysd.pcs=   | Scheduler          | =airflow scheduler=             | long-running =simple=    | =Requires=/=After=airflow-db.service= |
-| =airflow-triggerer-sysd.pcs=   | Triggerer (deferrable tasks) | =airflow triggerer=      | long-running =simple=    | =Requires=/=After=airflow-db.service= |
+| Unit (=.pcs=)                         | Airflow role                 | =ExecStart= sub-command          | Type                             | Ordering                                   |
+|---------------------------------------+------------------------------+----------------------------------+----------------------------------+--------------------------------------------|
+| =airflow-db-sysd.pcs=                 | DB migration                 | =airflow db migrate=             | =oneshot=, =RemainAfterExit=yes= | =Requires=/=After=postgresql.service=      |
+| =airflow-webserver-sysd.pcs=          | API server + web UI          | =airflow api-server --port ...=  | long-running                     | =Requires=/=After=airflow-db.service=      |
+| =airflow-scheduler-sysd.pcs=          | Scheduler                    | =airflow scheduler=              | long-running                     | =Requires=/=After=airflow-db.service=      |
+| =airflow-triggerer-sysd.pcs=          | Triggerer (deferrable tasks) | =airflow triggerer=              | long-running                     | =Requires=/=After=airflow-db.service=      |
+| =airflow-dag-processor-sysd.pcs=      | DAG file parsing             | =airflow dag-processor=          | long-running                     | =Requires=/=After=airflow-db.service=      |
 
-=airflow-db-sysd.pcs= is a =oneshot= unit with =RemainAfterExit=yes=: it runs
-=airflow db migrate= once at boot (or on manual start) to bring the metadata database
-schema up to date, then reports itself "active" without staying resident. The three
-long-running units (webserver, scheduler, triggerer) each declare
-=Requires=airflow-db.service= and =After=airflow-db.service=, so systemd guarantees the
-migration has completed (or at least been attempted) before any of the three
-service processes starts — avoiding races against an un-migrated database on a
-fresh host.
+=airflow-db-sysd.pcs= is a =oneshot= unit with =RemainAfterExit=yes=: once PostgreSQL is
+up, it runs =airflow db migrate= to bring the metadata schema up to date, then reports
+itself "active" without staying resident. The four long-running units each declare
+=Requires=/=After=airflow-db.service=, so systemd guarantees the migration has been
+attempted before any of them starts --- avoiding races against an un-migrated database
+on a fresh host.
 
-All four are planted via the CBS/CBM pattern: =airflow-cbs.pcs= declares the bundle
-(sbom + these four sysd units + dns/vhost as applicable) and =cbmProc-airflow.spcs=
-materializes it at the =sys/cbm/<realm>/<capabilityType>/airflow/= leaf for this
-host — see the =sysd-pcs-authorship= and =cbm-authorship= skills for the underlying
-mechanics.
+=airflow-dag-processor= is required on Airflow 3, which parses DAG files in a standalone
+process rather than in the scheduler. Without it every unit is healthy and no DAG is
+ever registered.
+
+All five are planted via the CBS/CBM pattern: =airflow-cbs.pcs= declares the bundle
+(sbom + these five sysd units + assemble for DNS/vhost) and the CBM leaf
+=sys/cbm/collective/hereWeb/airflow/cbmProc.spcs= materializes it on this host. See the
+=sysd-pcs-authorship= and =cbm-authorship= skills for the underlying mechanics.
+
+*** Not a Manual Recipe
+
+This panel used to end with a hand-run installation recipe. It came from before the
+package existed: =~/airflow=, a hand-made venv, a password-bearing PostgreSQL user and
+=airflow db init=. It was removed on 2026-10-01 because it contradicted what the package
+does. Install with =airflow-sbom.pcs -i sbom_fullUpdate=, or materialize the whole
+bundle through the CBM leaf; see [[file:../../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]].
 ** -B|
 * +
-
-Notes on configuring an isolated Airflow controller on Debian. This server acts strictly as an engine that parses external configuration files and spawns independent shell sub-processes. All target connections and authentication are managed outside of Airflow.
-
-* Core System Dependencies
-Install Python environment management and core execution headers. No heavy database plugins or message brokers (like Celery or Redis) are deployed.
-#+BEGIN_SRC bash
-sudo apt-get update
-sudo apt-get install -y build-essential python3-pip python3-venv libpq-dev
-#+END_SRC
-
-* Environment & Core Airflow Installation
-Establish the local home directory and isolate dependencies inside a dedicated Python virtual environment.
-#+BEGIN_SRC bash
-export AIRFLOW_HOME=~/airflow
-python3 -m venv airflow_env
-source airflow_env/bin/activate
-pip install "apache-airflow[postgres]==2.10.0" --constraint "https://githubusercontent.com"
-#+END_SRC
-
-* Runtime Configuration Layout
-Create structural directories for configuration files, independent executable scripts, and target logging outputs.
-#+BEGIN_SRC bash
-mkdir -p $AIRFLOW_HOME/dags
-mkdir -p $AIRFLOW_HOME/config
-mkdir -p $AIRFLOW_HOME/scripts
-mkdir -p $AIRFLOW_HOME/remote_outputs
-#+END_SRC
-
-* Metadata Storage Backend
-Initialize local PostgreSQL instances to maintain task execution histories and engine state transitions.
-#+BEGIN_SRC bash
-sudo -u postgres psql -c "CREATE DATABASE airflow_db;"
-sudo -u postgres psql -c "CREATE USER airflow_user WITH PASSWORD 'internal_orchestration_only';"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE airflow_db TO airflow_user;"
-
-# Apply backend configuration to airflow.cfg:
-# sql_alchemy_conn = postgresql+psycopg2://airflow_user:internal_orchestration_only@localhost/airflow_db
-airflow db init
-#+END_SRC
-
 * -B|
 ####+BEGIN: blee:bxPanel:separator :outLevel 1
 * /[[elisp:(beginning-of-buffer)][|^]] [[elisp:(blee:menu-sel:navigation:popupMenu)][==]] [[elisp:(delete-other-windows)][|1]]/

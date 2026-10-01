@@ -1,0 +1,263 @@
+* B|
+####+BEGIN: bxPanel:common/title-plus
+#+title: bisos.airflow/airflowUsage
+#+roam_tags: branch
+#+roam_key: bisos-pip/bisos.airflow/airflowUsage
+[[roam:bisos-pip/bisos.airflow]]
+####+END
+####+BEGIN: blee:bxPanel:topPanelControls
+*  [[elisp:(org-cycle)][|#Control|]] :: [[elisp:(blee:bnsm:menu-back)][Back]] [[elisp:(toggle-read-only)][read/wr]] | [[elisp:(show-all)][Show-All]]  [[elisp:(org-shifttab)][Overview]]  [[elisp:(progn (org-shifttab) (org-content))][Content]] | [[elisp:(delete-other-windows)][(1)]] | [[elisp:(progn (save-buffer) (kill-buffer))][S&Q]] [[elisp:(save-buffer)][Save]] [[elisp:(kill-buffer)][Quit]] [[elisp:(bury-buffer)][Bury]] [[elisp:(magit)][Magit]] [[elisp:(call-interactively 'b:rg:panels/all)][rg:panels/all]]  [[elisp:(org-cycle)][| ]]
+**  RipGrep:: [[elisp:(rg-menu)][rg-menu]] ||
+**  [[elisp:(bap:magit:bisos:current-bpo-repos/visit)][BPO-Repos-Magit]] ||
+**  [[elisp:(blee:buf:re-major-mode)][Re-Major-Mode]] ||  [[elisp:(org-dblock-update-buffer-bx)][Update Buf Dblocks]] || [[elisp:(org-dblock-bx-blank-buffer)][Blank Buf Dblocks]] || [[elisp:(bx:panel:variablesShow)][bx:panel:variablesShow]]
+**  [[elisp:(blee:menu-sel:comeega:maintenance:popupMenu)][||Maintenance]]
+**  This File :: *= /bisos/panels/bisos-core/bisos-pip/bisos.airflow/airflowUsage/_nodeBase_/fullUsagePanel-en.org =*
+* /file-truename:/  /bisos/git/bxRepos/bisos-pip/airflow/py3/panels/bisos.airflow/airflowUsage/_nodeBase_/fullUsagePanel-en.org
+*  [[elisp:(org-cycle)][|#Select|]]  :: (Results: [[elisp:(blee:bnsm:results-here)][Here]] | [[elisp:(blee:bnsm:results-split-below)][Below]] | [[elisp:(blee:bnsm:results-split-right)][Right]] | [[elisp:(blee:bnsm:results-other)][Other]] | [[elisp:(blee:bnsm:results-popup)][Popup]]) (Select:  [[elisp:(lsip-local-run-command "lpCurrentsAdmin.sh -i currentsGetThenShow")][Show Currents]]  [[elisp:(lsip-local-run-command "lpCurrentsAdmin.sh")][lpCurrentsAdmin.sh]] ) [[elisp:(org-cycle)][| ]]
+**  #See:  (Window: [[elisp:(blee:bnsm:results-window-show)][?]] | [[elisp:(blee:bnsm:results-window-set 0)][0]] | [[elisp:(blee:bnsm:results-window-set 1)][1]] | [[elisp:(blee:bnsm:results-window-set 2)][2]] | [[elisp:(blee:bnsm:results-window-set 3)][3]] ) || [[elisp:(lsip-local-run-command-here "echo pushd dest")][echo pushd dir]] || [[elisp:(lsip-local-run-command-here "lsf")][lsf]] || [[elisp:(lsip-local-run-command-here "pwd")][pwd]] |
+**  [[elisp:(org-cycle)][|#Destinations|]] :: [[Evolution]] | [[Maintainers]]  [[elisp:(org-cycle)][| ]]
+**  #See:  [[elisp:(bx:bnsm:top:panel-blee)][Blee]] | [[elisp:(bx:bnsm:top:panel-listOfDocs)][All Docs]]  E|
+####+END
+####+BEGIN: blee:bxPanel:title :panelType "=bxPanel=" :title "auto"
+* [[elisp:(show-all)][(>]] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*   [[img-link:file:/bisos/blee/env/images/fpfByStarElipseTop-50.png][http://www.freeprotocols.org]]_ _   bisos--~Node:: bisos-pip/bisos.airflow -- airflowUsage~   [[img-link:file:/bisos/blee/env/images/fpfByStarElipseBottom-50.png][http://www.by-star.net]]
+* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  [[elisp:(org-shifttab)][<)]] E|
+####+END:
+####+BEGIN: blee:bxPanel:terseTreeNavigator :panelsList "bxPanel"
+* [[elisp:(show-all)][(>]] [[elisp:(describe-function 'org-dblock-write:blee:bxPanel:terseTreeNavigator)][dbf]]
+* +
+*   /Ancestors/  :: [[elisp:(blee:bnsm:panel-goto "//bisos/panels/bisos-core/bisos-pip/bisos.airflow/_nodeBase_")][ = /<bisos.airflow>/ = ]] *|* [[elisp:(blee:bnsm:panel-goto "//bisos/panels/bisos-core/bisos-pip/_nodeBase_")][ =bisos-pip= ]] *|* [[elisp:(blee:bnsm:panel-goto "//bisos/panels/bisos-core/_nodeBase_")][ =bisos-core= ]] *|* [[elisp:(blee:bnsm:panel-goto "//bisos/panels/_nodeBase_")][ = /<panels>/ = ]] *|* [[elisp:(dired "//bisos")][ ~bisos~ ]] *|*
+*                                   _━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━_                          [[elisp:(org-shifttab)][<)]] E|
+####+END
+####+BEGIN: blee:bxPanel:foldingSection :outLevel 1 :title "Airflow Usage --- What bisos.airflow Does" :anchor "Panel" :extraInfo ""
+* [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| *Airflow Usage --- What bisos.airflow Does:* |]] <<Panel>>   [[elisp:(org-shifttab)][<)]] E|
+####+END
+** +
+
+This panel is the authoritative description of what =bisos.airflow= provides and
+how a deployment made with it is laid out. It is package-level: it describes the
+mechanism, not any particular deployed instance. Instance-specific facts
+(hostnames, which DAGs, local overrides in =/etc/default/airflow=) belong to the
+project that deploys it.
+
+Downstream projects that deploy Airflow the BISOS way =@=-import this file into
+their own =AI-Activity.org=. Import it through =/bisos/git/bxRepos/...=:
+
+: @/bisos/git/bxRepos/bisos-pip/airflow/py3/panels/bisos.airflow/airflowUsage/_nodeBase_/fullUsagePanel-en.org
+
+Known gaps and package maturity are tracked in this repo's =AI-DevStatus.org= and
+=AI-WorkPlan.org=, not here.
+
+*** Purpose and Scope
+
+=bisos.airflow= (source under =py3/= in
+=/bisos/git/bxRepos/bisos-pip/airflow=) installs and runs an Apache Airflow
+platform on a single Debian host as a BISOS *Capability Bundle*: an SBOM for
+packages and the metadata DB, one systemd unit per Airflow role, and an
+assemble step for DNS + nginx exposure. It sits between a single monolithic
+=airflow standalone= process and a distributed/HA deployment (Celery,
+Kubernetes) --- see the =serverSetup= panel for that positioning.
+
+Covered: account and directory layout, package install (via =bisos.sbom=), the
+PostgreSQL metadata DB, systemd units for the five Airflow roles, and nginx-vhost
++ DNS exposure. Not covered: choosing an executor, templating =airflow.cfg=, and
+bridging DAG tasks into other Python venvs --- see below.
+
+*** Account, Directories and Environment
+
+Everything runs as the dedicated system account =airflow=, not as root.
+=airflow-sbom.pcs= sets this up through the =airflowAcctEnvSetup= pseudo-package,
+which runs (idempotently) on every =sbom_fullUpdate=:
+
+| What                        | Where                                  | Notes                                            |
+|-----------------------------+----------------------------------------+--------------------------------------------------|
+| System user                 | =airflow= (=useradd -r -m=)            | created only when absent                         |
+| =AIRFLOW_HOME=              | =/opt/airflow=                         | runtime state only: =dags/=, =logs/=, =airflow.cfg= |
+| Python venv                 | =/bisos/venv/py3/asc=                  | shared with other bisos packages, not per-app    |
+| Runtime dir                 | =/run/airflow= (=/etc/tmpfiles.d/airflow.conf=) | PID and socket files                     |
+| Unit environment            | =/etc/default/airflow=                 | =root:airflow= 640, read via =EnvironmentFile== |
+
+=/etc/default/airflow= is written *only when absent*, so hand-added overrides
+survive re-runs. As written by the package it contains:
+
+- =AIRFLOW_HOME=/opt/airflow=
+- =AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://@/airflow?host=/var/run/postgresql=
+- =AIRFLOW__API__BASE_URL=http://<fqdn>= --- the address humans browse, through nginx
+- =AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://localhost:<port>/execution/=
+
+The last one is not optional. Airflow 3 task processes reach the api-server over
+HTTP (the Task Execution API). When it is unset the task SDK falls back to
+=http://localhost:8080=; because the port here comes from =bisos.banna=, every
+task then dies with =[Errno 111] Connection refused= while all units stay green.
+A host whose =/etc/default/airflow= predates these lines must get them by hand ---
+either there, or as =[core] execution_api_server_url= / =[api] base_url= in
+=airflow.cfg=.
+
+Run Airflow CLI commands the way the units do: as =airflow=, with that
+environment, e.g. =sudo -u airflow env $(sudo cat /etc/default/airflow | grep -v '^#') /bisos/venv/py3/asc/bin/airflow dags list=.
+
+*** Packages and the Metadata DB
+
+=airflow-sbom.pcs= (a =bisos.sbom= planted file) installs:
+
+- apt: =python3=, =python3-pip=, =python3-venv=, =build-essential=, =libpq-dev=,
+  =libssl-dev=, =libffi-dev=, =pkg-config=, =postgresql=.
+- pip, into =/bisos/venv/py3/asc=: =apache-airflow=, =psycopg2= (sync driver) and
+  =asyncpg= (async driver --- Airflow 3 builds an async engine too; without it
+  every CLI call and unit fails with =ModuleNotFoundError: asyncpg=).
+
+The metadata DB is *PostgreSQL*, provisioned by the =airflowPostgresSetup=
+pseudo-package: a =LOGIN= role and a database, both named =airflow=, and
+=max_connections= raised to 200 (five units each hold a SQLAlchemy pool). Auth is
+*peer auth over the unix socket*: the connection string carries no user and no
+password, and PostgreSQL maps the =airflow= OS account to the like-named role. No
+secret appears in =/etc/default/airflow= or =airflow.cfg=. SQLite (Airflow's
+default) is not used: it is single-writer and documented as dev/test only.
+
+The web UI uses Airflow 3's simple auth manager. The admin password is
+auto-generated into =/opt/airflow/simple_auth_manager_passwords.json.generated=
+(airflow-owned); =airflow-sbom.pcs -i adminPasswd= prints it.
+
+*** The Five systemd Units
+
+Each role is a planted =*-sysd.pcs= in =py3/bin/= calling
+=bisos.debian.systemd_seedInfo.setup(seedType="sysdSysUnit", ...)=. The =airflow=
+executable path is resolved at materialization time with
+=pathPlus.whichBinPath("airflow")=. All five units have =User=airflow=,
+=Group=airflow= and =EnvironmentFile=/etc/default/airflow=.
+
+| Unit (=.pcs=)                       | Role                         | =ExecStart= sub-command          | Type / ordering                                              |
+|-------------------------------------+------------------------------+----------------------------------+--------------------------------------------------------------|
+| =airflow-db= (=airflow-db-sysd.pcs=) | metadata schema migration    | =airflow db migrate=             | =oneshot=, =RemainAfterExit=yes=; =Requires=/=After=postgresql.service= |
+| =airflow-webserver=                 | API server + web UI          | =airflow api-server --port <port>= | =Requires=/=After=airflow-db.service=                       |
+| =airflow-scheduler=                 | scheduler                    | =airflow scheduler=              | =Requires=/=After=airflow-db.service=                        |
+| =airflow-triggerer=                 | triggerer (deferrable tasks) | =airflow triggerer=              | =Requires=/=After=airflow-db.service=                        |
+| =airflow-dag-processor=             | DAG file parsing             | =airflow dag-processor=          | =Requires=/=After=airflow-db.service=                        |
+
+=airflow-dag-processor= is required on Airflow 3, which parses DAG files in a
+standalone process rather than in the scheduler. Without it every unit is
+healthy and no DAG is ever registered.
+
+=api-server= is the Airflow 3 sub-command name (Airflow 2 used =webserver=); the
+unit name =airflow-webserver= is historical. The port is looked up by name from
+the =bisos.banna= registry (=tcpPortsList['airflow']=); =bisos.airflow= performs
+the lookup but does not own the port assignment.
+
+*** Capability Bundle: CBS and CBM
+
+- *CBS* --- =py3/bin/airflow-cbs.pcs= declares the bundle: =sbom="airflow-sbom.pcs"=,
+  =assemble="airflow-assemble.cs"=, and the five units above as
+  =sysdUnitsListAirflow=. Materializing it runs the sbom, then the assemble step,
+  then ensures each unit.
+- *CBM* --- the planted leaf
+  =/bisos/platform/sys/cbm/collective/hereWeb/airflow/cbmProc.spcs= (in the
+  =bro_rawBisos= repo) is a pointer: =capabilityName="airflow"= and
+  =cbsSpec="/bisos/git/bxRepos/bisos-pip/airflow/py3/bin/airflow-cbs.pcs"= ---
+  an absolute path, so PATH order cannot redirect it. Its sibling
+  =cbmProc.control= gates materialization; =cbmProc.status= logs each run.
+  The package also ships the same pointer as =py3/bin/cbmProc-airflow.spcs=.
+
+See the =cbm-authorship= and =sysd-pcs-authorship= skills for the mechanics.
+
+*** Exposure: nginx vhost + DNS
+
+=airflow-assemble.cs -i fullUpdate= runs two steps:
+
+- =hereDns()= runs =airflow-here-dns.pcs -i dnsCap_update= --- wraps
+  =bisos.dnsCap=, resolving the FQDN (=airflow.here=) via =/etc/hosts=
+  (=DnsSpecMethod.etcHosts=), not real DNS.
+- =webVirtDom()= runs =airflow-wvd.pcs -i configFileUpdate --cls="configFile_nginxVd" --runAs=root=
+  then =-i webVd_enable= --- wraps =bisos.webCap=, building an nginx vhost with
+  =webVd_nginxSites.atPortSite(serverName=, proxyIp=, proxyPort=)=, proxying to
+  the banna-assigned port.
+
+Re-run =airflow-assemble.cs -i fullUpdate= (or the two =.pcs= commands) to change
+vhost/DNS config; hand-editing the generated nginx config or hosts entry defeats
+reproducibility.
+
+*** Executor: Not This Package's Decision
+
+The package chooses the *backend* (PostgreSQL, via
+=AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=, which overrides =airflow.cfg=) but not the
+*executor*. Nothing in =bisos.airflow= sets =core.executor= or templates
+=airflow.cfg=, so the executor is whatever the instance's =airflow.cfg= (or an
+=AIRFLOW__CORE__EXECUTOR= line added to =/etc/default/airflow=) says. Check the
+instance; don't infer it from this package. (The =serverSetup= and
+=scalingExecutors= panels assume =LocalExecutor=.)
+
+*** Cross-Venv DAG Code: Not This Package's Concern
+
+=bisos.airflow= has no opinion on how a DAG task reaches code installed in a
+Python venv other than Airflow's own (=/bisos/venv/py3/asc=). There is no
+=PythonVirtualenvOperator= template and no subprocess/wrapper convention in its
+source. Bridging (subprocess into the other venv's interpreter, a
+=BashOperator=, a =PythonVirtualenvOperator=, ...) is up to whoever writes the
+DAG and is documented per deployment.
+
+*** Commands
+
+| Command                              | Purpose                                                           |
+|--------------------------------------+-------------------------------------------------------------------|
+| =airflow-sbom.pcs -i sbom_fullUpdate= | install account, packages and metadata DB                        |
+| =airflow-sbom.pcs -i readme=          | describe what the sbom installs                                  |
+| =airflow-sbom.pcs -i adminPasswd=     | print the auto-generated admin password (reads =/opt/airflow= as root) |
+| =airflow-cbs.pcs -i cbs_materialize=  | sbom + assemble + ensure all units                               |
+| =airflow-<role>-sysd.pcs -i sysdSysUnit status= | per-unit status (also =ensure=)                        |
+| =airflowAdmin.cs=                     | host/services/users/DAGs info (starting point, not complete)     |
+| =quickAirflow.cs=                     | quick-reference menu of Airflow CLI commands (starting point)    |
+
+=bisos.airflow= is not pip-installed, so none of these are on PATH; invoke them
+by full path under =/bisos/git/bxRepos/bisos-pip/airflow/py3/bin/=.
+
+** -B|
+* +
+* -B|
+####+BEGIN: blee:bxPanel:separator :outLevel 1
+* /[[elisp:(beginning-of-buffer)][|^]] [[elisp:(blee:menu-sel:navigation:popupMenu)][==]] [[elisp:(delete-other-windows)][|1]]/
+####+END
+####+BEGIN: blee:bxPanel:evolution
+* [[elisp:(show-all)][(>]] [[elisp:(describe-function 'org-dblock-write:blee:bxPanel:evolution)][dbf]]
+*                                   _━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━_
+* [[elisp:(show-all)][|n]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_     [[elisp:(org-cycle)][| *Maintenance:* | ]]  [[elisp:(blee:menu-sel:agenda:popupMenu)][||Agenda]]  <<Evolution>>  [[elisp:(org-shifttab)][<)]] E|
+####+END
+####+BEGIN: blee:bxPanel:foldingSection :outLevel 2 :title "Notes, Ideas, Tasks, Agenda" :anchor "Tasks"
+** [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| /Notes, Ideas, Tasks, Agenda:/ |]] <<Tasks>>   [[elisp:(org-shifttab)][<)]] E|
+####+END
+*** Content last verified against source and the live units on 2026-10-01.
+####+BEGIN: blee:bxPanel:evolutionMaintainers
+** [[elisp:(show-all)][(>]] [[elisp:(describe-function 'org-dblock-write:blee:bxPanel:evolutionMaintainers)][dbf]]
+** [[elisp:(show-all)][|n]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(org-cycle)][| /Bug Reports, Development Team:/ | ]]  <<Maintainers>>
+***  Problem Report                       ::   [[elisp:(find-file "")][Send debbug Email]]
+***  Maintainers                          ::   [[bbdb:Mohsen.*Banan]]  :: http://mohsen.1.banan.byname.net  E|
+####+END
+* B|
+####+BEGIN: blee:bxPanel:footerPanelControls
+* [[elisp:(show-all)][(>]] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+* /Footer Controls/ ::  [[elisp:(blee:bnsm:menu-back)][Back]]  [[elisp:(toggle-read-only)][toggle-read-only]]  [[elisp:(show-all)][Show-All]]  [[elisp:(org-shifttab)][Cycle Glob Vis]]  [[elisp:(delete-other-windows)][1 Win]]  [[elisp:(save-buffer)][Save]]   [[elisp:(kill-buffer)][Quit]]  [[elisp:(org-shifttab)][<)]] E|
+####+END
+####+BEGIN: blee:bxPanel:footerOrgParams
+* [[elisp:(show-all)][|n]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_     [[elisp:(org-cycle)][| *= Org-Mode Local Params: =* | ]]
+#+STARTUP: overview
+#+STARTUP: lognotestate
+#+STARTUP: inlineimages
+#+SEQ_TODO: TODO WAITING DELEGATED | DONE DEFERRED CANCELLED
+#+TAGS: @desk(d) @home(h) @work(w) @withInternet(i) @road(r) call(c) errand(e)
+#+CATEGORY: N:airflowUsage
+
+####+END
+####+BEGIN: blee:bxPanel:footerEmacsParams :primMode "org-mode"
+* [[elisp:(show-all)][|n]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_     [[elisp:(org-cycle)][| *= Emacs Local Params: =* | ]]
+# Local Variables:
+# eval: (setq-local toc-org-max-depth 4)
+# eval: (setq-local ~selectedSubject "noSubject")
+# eval: (setq-local ~primaryMajorMode 'org-mode)
+# eval: (setq-local ~blee:panelUpdater nil)
+# eval: (setq-local ~blee:dblockEnabler nil)
+# eval: (setq-local ~blee:dblockController "interactive")
+# eval: (img-link-overlays)
+# eval: (set-fill-column 115)
+# eval: (blee:fill-column-indicator/enable)
+# eval: (bx:load-file:ifOneExists "./panelActions.el")
+# End:
+
+####+END

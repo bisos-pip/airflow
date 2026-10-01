@@ -36,7 +36,18 @@
 * [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| *Overview and Use Cases:* |]] <<Panel>>   /::Blank Starting Point::/  [[elisp:(org-shifttab)][<)]] E|
 ####+END
 ** +
-** Overview Comes Here.
+*** Status: Aspirational (noted 2026-10-01)
+
+The notes below describe scope that has *no corresponding code* in =bisos.airflow=.
+Don't cite them as evidence of implemented behaviour. For what the package actually
+does, see the [[file:../../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]] panel.
+
+Run Airflow CLI commands as =airflow= with the units' environment (=/etc/default/airflow=);
+=AIRFLOW_HOME= is =/opt/airflow=.
+
+Known conflicts with the actual installation:
+- =/home/airflow/remote_outputs/...= is not a package-defined location; Airflow's own logs are under =/opt/airflow/logs/=.
+- There are five units to follow with =journalctl=, including =airflow-dag-processor.service=.
 ** -B|
 * +
 * Overview -- Monitoring, Logging & Alerting (Layered Log Strategy)

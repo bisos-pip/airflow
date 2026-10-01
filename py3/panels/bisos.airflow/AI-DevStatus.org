@@ -16,6 +16,47 @@ prompted to update this document.
 
 Companion docs: [[file:][]] (agent guidance / layering), [[file:README.org][README.org]] (overview).
 
+* Current State (2026-10-01)
+
+The panel tree for =bisos.airflow=. =/bisos/panels/bisos-core/bisos-pip/bisos.airflow=
+resolves here. The package repo's own =AI-DevStatus.org= (two levels up from =py3/=) is
+the handoff for the package as a whole.
+
+| Node                        | Role                                                    | Status          |
+|-----------------------------+---------------------------------------------------------+-----------------|
+| =_nodeBase_/= (top)         | Overview + child-panel table                            | current         |
+| =airflowUsage/=             | *Authoritative* "what =bisos.airflow= does"; =@=-imported downstream | current |
+| =serverSetup/=              | Deployment options + the 5 units                        | current         |
+| =dagDevelopmentTesting/=    | DAG development notes                                   | aspirational    |
+| =maintenanceAndDb/=         | DB maintenance notes                                    | aspirational    |
+| =monitoringLoggingAlerting/= | Logging/monitoring notes                               | aspirational    |
+| =scalingExecutors/=         | Executor tuning notes                                   | aspirational    |
+| =userManagement/=           | User/auth notes                                         | aspirational    |
+
+Each aspirational panel opens with a "Status: Aspirational" note listing where its
+bodies conflict with the real installation. Their bodies were deliberately not
+rewritten: whether to implement, keep or drop that scope is undecided.
+
+* Key Facts
+
+- =airflowUsage= is =@=-imported by =site-status-scripts/airflow/AI-Activity.org=, so
+  anything written there loads into that project's sessions. Keep it package-level:
+  no instance-specific hostnames, overrides or DAGs.
+- =airflowUsage= was created 2026-10-01 by copying =serverSetup/='s node skeleton and
+  renaming its self-paths.
+- Content of =airflowUsage= and =serverSetup= was last verified against source and the
+  live units on 2026-10-01.
+
+* What Is Untested / Pending
+
+- *Dblocks not regenerated.* After the 2026-10-01 edits, run Update Buf Dblocks in Blee
+  on =airflowUsage/_nodeBase_/fullUsagePanel-en.org=, the top-level panel, and the
+  parent =ftoProc.sh= (=nodesList=). Until then =airflowUsage= does not appear in the
+  navigators, and its own navigator block is a hand-made placeholder.
+- No =runResult= / =icm:py:cmnd= dblocks yet: the package's commands are not on PATH
+  (not pip-installed), so captured-output blocks would not regenerate. Revisit once
+  it is installed.
+
 
 
 # Local Variables:

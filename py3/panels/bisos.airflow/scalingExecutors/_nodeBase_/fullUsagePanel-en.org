@@ -36,7 +36,18 @@
 * [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| *Overview and Use Cases:* |]] <<Panel>>   /::Blank Starting Point::/  [[elisp:(org-shifttab)][<)]] E|
 ####+END
 ** +
-** Overview Comes Here.
+*** Status: Aspirational (noted 2026-10-01)
+
+The notes below describe scope that has *no corresponding code* in =bisos.airflow=.
+Don't cite them as evidence of implemented behaviour. For what the package actually
+does, see the [[file:../../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]] panel.
+
+Run Airflow CLI commands as =airflow= with the units' environment (=/etc/default/airflow=);
+=AIRFLOW_HOME= is =/opt/airflow=.
+
+Known conflicts with the actual installation:
+- The package does not set the executor or any =airflow.cfg= tuning; these are per-instance settings.
+- =run_remote_job.sh= is not part of the package.
 ** -B|
 * +
 

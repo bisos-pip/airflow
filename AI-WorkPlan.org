@@ -119,13 +119,28 @@ Goal: Update and implement images, panels and tests workplan.
 SCHEDULED: <2026-09-21 Mon 12:11>
 Update its TODOs and Go there and Accomplish its TODOs.
 ----- Results: ------
+2026-10-01. Added 4 TODOs (=p1.2=--=p1.5=) to the panel work plan and did
+them all; details are there.
+- =p1.2=: the =airflowUsage= panel and top-level overview (= [[4.8]]).
+- =p1.3=: =serverSetup= corrected:
+  - 5 units, with =User=airflow=, =EnvironmentFile= and =postgresql=
+    ordering;
+  - executor claim fixed;
+  - root-era manual recipe removed.
+- =p1.4=: the five aspirational panels each open with a status note
+  listing their concrete conflicts, checked against the live =airflow.cfg=
+  (=SimpleAuthManager=, peer-auth DB, non-package paths). Bodies untouched.
+- =p1.5=: the panel subproject's =AI-DevStatus.org= is filled in.
 
-** DONE [#C] <<4,2>> Accomplish /bisos/git/bxRepos/bisos-pip/airflow/py3/images/AI-WorkPlan.org :aiAndMe:
+Pending (Mohsen, in Blee): regenerate the navigator dblocks.
+
+** DONE [#C] <<4.2>> Accomplish /bisos/git/bxRepos/bisos-pip/airflow/py3/images/AI-WorkPlan.org :aiAndMe:
 SCHEDULED: <2026-09-01 Tue 13:01>
 Go there and Accomplish its TODOs.
 ----- Results: ------
 
-** TODO [#A] <<4.3>> Stale copies in =/bisos/asc/web/bin/= shadow the package on PATH :aiAndMe:
+** DONE [#A] <<4.3>> Stale copies in =/bisos/asc/web/bin/= shadow the package on PATH :aiAndMe:
+CLOSED: [2026-10-01 Thu]
 SCHEDULED: <2026-10-01 Thu>
 :PROPERTIES:
 :REPO: /bisos/git/bxRepos/bisos/asc/web
@@ -152,6 +167,37 @@ SCHEDULED: <2026-10-01 Thu>
 - *Action*: retire the =/bisos/asc/web/bin/= airflow copies, or ensure the
   package wins on PATH.
 ----- Results: ------
+Done 2026-10-01. Retired the copies; the PATH alternative was not
+available, because =bisos.airflow= is not pip-installed and so nothing
+from =py3/bin/= is on PATH.
+
+- *CBM pointer* (Mohsen, =bro_rawBisos= commits =a102cb7=, =11c6fec=,
+  =5ad1cd8=): the planted leaf
+  =sys/cbm/collective/hereWeb/airflow/cbmProc.spcs= has
+  =cbsSpec="/bisos/git/bxRepos/bisos-pip/airflow/py3/bin/airflow-cbs.pcs"=,
+  an absolute path that PATH order cannot affect. The leftover symlink
+  =sys/cbm/airflow-cbs.pcs= was removed.
+- *Stale copies deleted* (Mohsen): all 9 =airflow-*= files in
+  =bisos/asc/web/bin/= (=bisos/asc= commit =addaad4=; the set included
+  =airflow-assemble.cs=, so 9 files, not 8). Also removed
+  =airflow-here-dns.pcs= and =airflow-wvd.pcs= from
+  =/bisos/venv/py3/bisos3/bin/=. Verified: =which -a= finds no
+  =airflow-*.pcs= on PATH.
+- *No damage occurred*: the installed =airflow-*.service= units all carry
+  =User=airflow= + =EnvironmentFile=/etc/default/airflow= and were last
+  written 2026-09-11/12.
+- *Docs in =bro_rawBisos=* (Claude): updated the references that still
+  presented =/bisos/asc/web/bin/= as current. These were in
+  =AI-DevStatus.org=, =AI-Activity.org= and
+  =bro_rawBisosPlatform/README.org=. DONE TODO results in its
+  =AI-WorkPlan.org= were kept as history, with dated notes added.
+  Uncommitted.
+- *Out of scope, same pattern*: the =nginx= and =reactPlus= CBM leaves
+  still have =cbsSpec= under =/bisos/asc/web/bin/=. Those files are not
+  airflow.
+- *Pitfall*: =/bisos/git/anon/bxRepos/bxObjects/bro_rawBisos= is a stale
+  clone (last pulled 2026-08-26) that still shows the old =cbsSpec=. The
+  live tree is the =/bisos/git/auth/= clone.
 
 ** TODO [#B] <<4.3.1>> airflow-sbom.pcs includes postgress. There should be a postgress-sbom.pcs :aiAndMe:
 SCHEDULED: <2026-10-01 Thu>
@@ -230,8 +276,8 @@ All still describe the root-based installation:
 - =README.org= --- the "4 systemd Units and DB Init" section.
 - =py3/panels/bisos.airflow/serverSetup/_nodeBase_/fullUsagePanel-en.org=.
 - =AI-Usage.org= --- describes the unit templates with no mention of
-  =User=airflow= or =EnvironmentFile=. *Also still untracked in git* (=??=);
-  never committed.
+  =User=airflow= or =EnvironmentFile=. /2026-10-01: superseded by [[4.8]];
+  the file is removed. (It had been tracked since =a9bf282=, not untracked.)/
 - =AI-DevStatus.org= --- still template placeholders for Architecture, What
   Works, What Is Untested, Key Design Decisions.
 
@@ -240,6 +286,36 @@ Pre-existing and separate: most Blee-panel content beyond =serverSetup=
 =dynamic_remote_orchestrator= DAG) describes scope that does not exist in
 code. Do not cite those panels as evidence of implemented behaviour.
 ----- Results: ------
+2026-10-01. All four items are addressed.
+- =README.org=:
+  - five roles/units, with =dag-processor= and its Airflow 3 rationale;
+  - =airflow= account, =/opt/airflow=, =/etc/default/airflow= and the
+    PostgreSQL DB;
+  - real CBM leaf path;
+  - command and key-file lists gain =airflow-dag-processor-sysd.pcs= and
+    =airflow-wvd.pcs=;
+  - pointers to the =airflowUsage= panel.
+
+  =py3/_description.org= / =README.rst= will follow at the next
+  =pypiProc.sh= run; they were not hand-edited. The =topControls= dblock
+  (line 10, a =/bisos/git/auth/= link) was not touched either.
+- =serverSetup= panel: done under [[4.1]] (=p1.3=).
+- =AI-Usage.org=: superseded and removed under [[4.8]].
+- =AI-DevStatus.org=: Architecture (diagram), What Works (verified on
+  this host), What Is Untested, Key Design Decisions, and Documentation
+  Outside The Import Chain are all filled in.
+- Aspirational panels: marked under [[4.1]] (=p1.4=).
+
+*Not done --- source, not docs*: the "4 units" text remains in:
+- =airflow-sbom.pcs -i readme= (which also omits =asyncpg=);
+- =airflowAdmin.cs= (=servicesInfo= text, and a SQLite comment);
+- =py3/images/airflow-graphviz.pcs= and its rendered figure and caption.
+
+Listed in =AI-DevStatus.org= under Known gaps.
+
+*Correction*: one finding reported during [[4.8]] was wrong. This host's
+=/etc/default/airflow= lacks the Airflow 3 URL lines, but =airflow.cfg=
+sets both, so tasks are not affected.
 
 ** TODO [#A] <<4.8>> Move AI-Usage.org to Airflow-Usage Panel
 :PROPERTIES:
@@ -252,6 +328,42 @@ Some of what is in AI-Usage belongs to AI-DevStatus. AI-WorkPlan.org should ment
 Airflow-Usage Panel.
 This relates to [[4.1]]
 ----- Results: ------
+2026-10-01. *Airflow-Usage panel* (the authoritative "what =bisos.airflow=
+does"): =py3/panels/bisos.airflow/airflowUsage/_nodeBase_/fullUsagePanel-en.org=.
+
+- *New node =airflowUsage/=*: skeleton copied from =serverSetup/= with its
+  self-paths renamed. The panel holds the package-level content of the old
+  =AI-Usage.org=, re-verified against source and the live units and updated
+  for the airflow-user installation:
+  - =airflow= account, =/opt/airflow=, =/etc/default/airflow=, and why
+    =EXECUTION_API_SERVER_URL= matters;
+  - the PostgreSQL metadata DB with peer auth;
+  - five units, including =dag-processor=;
+  - CBS/CBM with an absolute =cbsSpec=;
+  - nginx+DNS exposure;
+  - executor and cross-venv scope, and a commands table.
+
+  Corrected an old claim: the package *does* choose the backend
+  (PostgreSQL). It does not choose the executor.
+- *Top-level panel* =_nodeBase_/fullUsagePanel-en.org=: the blank
+  "Overview Comes Here." is replaced with a short overview and a
+  child-panel table. Each child is marked authoritative, being updated,
+  or aspirational, and the overview points to =airflowUsage=.
+- *Gaps and maturity* moved to =AI-DevStatus.org= under "Known gaps and
+  maturity", together with new findings: stale sbom =readme= text, the
+  PATH reach of bare =.pcs= names, and =/etc/default/airflow= being
+  write-once. That last one is harmless on this host, because
+  =airflow.cfg= sets both Airflow 3 URLs.
+- *=AI-Usage.org= removed* (=git rm=). The downstream consumer
+  =site-status-scripts/airflow/AI-Activity.org= now =@=-imports the
+  =airflowUsage= panel via =/bisos/git/bxRepos/...=, and its 4 textual
+  references point at the panel. Two of its instance facts that 4.3 made
+  false were also corrected: the backend is PostgreSQL, not SQLite
+  (verified in =airflow.cfg=), and the =/bisos/asc/web/bin/= PATH caveat no
+  longer applies.
+- *Pending (Mohsen, in Blee)*: run Update Buf Dblocks on the new panel and
+  on the parent panel and =ftoProc.sh=, so that =airflowUsage= appears in
+  the navigators and =nodesList=.
 
 ** -
 

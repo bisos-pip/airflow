@@ -36,7 +36,18 @@
 * [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| *Overview and Use Cases:* |]] <<Panel>>   /::Blank Starting Point::/  [[elisp:(org-shifttab)][<)]] E|
 ####+END
 ** +
-** Overview Comes Here.
+*** Status: Aspirational (noted 2026-10-01)
+
+The notes below describe scope that has *no corresponding code* in =bisos.airflow=.
+Don't cite them as evidence of implemented behaviour. For what the package actually
+does, see the [[file:../../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]] panel.
+
+Run Airflow CLI commands as =airflow= with the units' environment (=/etc/default/airflow=);
+=AIRFLOW_HOME= is =/opt/airflow=.
+
+Known conflicts with the actual installation:
+- =/home/airflow/config/...= is not a package-defined location.
+- The metadata DB is role and database =airflow= with peer auth over the unix socket; there is no =airflow_user=, no =airflow_db= and no password. A dump is =sudo -u airflow pg_dump airflow=, not =pg_dump -U airflow_user -h localhost airflow_db=.
 ** -B|
 * +
 * Overview --  Maintenance & CI/CD Lifecycle (External Modification Rules)

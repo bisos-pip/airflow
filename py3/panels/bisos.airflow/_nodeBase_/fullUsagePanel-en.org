@@ -42,7 +42,31 @@
 * [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| *Overview and Use Cases:* |]] <<Panel>>   /::Blank Starting Point::/  [[elisp:(org-shifttab)][<)]] E|
 ####+END
 ** +
-** Overview Comes Here.
+
+=bisos.airflow= installs and runs Apache Airflow (3.x) on a single Debian host as a BISOS
+Capability Bundle. Airflow runs as the =airflow= system account with =AIRFLOW_HOME=/opt/airflow=
+and a PostgreSQL metadata DB, and each Airflow role (db migrate, api-server, scheduler,
+triggerer, dag-processor) is its own systemd unit. =airflow.here= is exposed through
+an nginx vhost. A CBM leaf under =/bisos/platform/sys/cbm/collective/hereWeb/airflow/=
+materializes the whole bundle by pointing at the package's =airflow-cbs.pcs=.
+
+*** Child Panels
+
+| Panel                       | Content                                                                  | Status        |
+|-----------------------------+--------------------------------------------------------------------------+---------------|
+| [[file:../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]]   | *What the package does* --- layout, units, DB, CBS/CBM, exposure, commands | authoritative |
+| [[file:../serverSetup/_nodeBase_/fullUsagePanel-en.org][serverSetup]]     | Deployment options, and where this package sits among them           | being updated |
+| dagDevelopmentTesting       | DAG authoring and testing notes                                         | aspirational  |
+| maintenanceAndDb            | DB maintenance                                                          | aspirational  |
+| monitoringLoggingAlerting   | Monitoring, logging, alerting                                           | aspirational  |
+| scalingExecutors            | Executor scaling                                                        | aspirational  |
+| userManagement              | Multi-user management                                                   | aspirational  |
+
+/Aspirational/ panels describe scope that has no corresponding code in this package. Don't cite
+them as evidence of implemented behaviour.
+
+Start with [[file:../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]].
+Development state and known gaps are in the repo's =AI-DevStatus.org=.
 ** -B|
 * +
 * -B|

@@ -36,7 +36,19 @@
 * [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| *Overview and Use Cases:* |]] <<Panel>>   /::Blank Starting Point::/  [[elisp:(org-shifttab)][<)]] E|
 ####+END
 ** +
-** Overview Comes Here.
+*** Status: Aspirational (noted 2026-10-01)
+
+The notes below describe scope that has *no corresponding code* in =bisos.airflow=.
+Don't cite them as evidence of implemented behaviour. For what the package actually
+does, see the [[file:../../airflowUsage/_nodeBase_/fullUsagePanel-en.org][airflowUsage]] panel.
+
+Run Airflow CLI commands as =airflow= with the units' environment (=/etc/default/airflow=);
+=AIRFLOW_HOME= is =/opt/airflow=.
+
+Known conflicts with the actual installation:
+- =airflow users create= belongs to the FAB auth manager. The installation uses Airflow 3's =SimpleAuthManager=; the admin password is in =/opt/airflow/simple_auth_manager_passwords.json.generated= (=airflow-sbom.pcs -i adminPasswd=).
+- =web_server_host= / =web_server_port= are Airflow 2 =[webserver]= options. The api-server listens on the =bisos.banna=-assigned port and the UI is reached through the nginx vhost (=http://airflow.here=), not by binding =0.0.0.0:8080=.
+- =/home/airflow/scripts/...= is not a package-defined location.
 ** -B|
 * +
 
