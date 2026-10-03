@@ -22,7 +22,7 @@ architecture, what works, what is untested and the design decisions made so far.
 This file is maintained by Claude. Updates are typically triggered by the
 =/bx-update-status= slash command, after major interactions, or before a release.
 
-Last updated: 2026-10-01.
+Last updated: 2026-10-03.
 
 * Current State
 
@@ -38,11 +38,19 @@ Last updated: 2026-10-01.
   repo's import chain.
 
   *Open work*:
-  - =AI-WorkPlan.org= Stage 4: [[file:AI-WorkPlan.org::4.3.1][4.3.1]] (split out a postgres
-    sbom), [[file:AI-WorkPlan.org::4.4][4.4]] (library surface), [[file:AI-WorkPlan.org::4.5][4.5]] (version floor) and
-    [[file:AI-WorkPlan.org::4.6][4.6]] (=AIRFLOW_HOME= duplication). 4.4 and 4.6 are to be done together.
-  - Stage 3: two open TODOs (adopting afctl/airflint/etc.; improving
-    =airflowAdmin.cs=). The airflow-user/=/opt/airflow= TODO was verified as
+  - =AI-WorkPlan.org= Stage 4: [[file:AI-WorkPlan.org::4.4][4.4]] (library surface), [[file:AI-WorkPlan.org::4.5][4.5]] (version floor) and
+    [[file:AI-WorkPlan.org::4.6][4.6]] (=AIRFLOW_HOME= duplication) were *implemented 2026-10-03* and
+    await Mohsen's review before being marked DONE. They are described under
+    "Library: =airflowInfo=" below. Not yet run: =airflowAdmin.cs -i driftCheck=, the
+    sbom, and the whole =verify.sh=.
+  - 4.3.1 (split out a postgres sbom) is DONE 2026-10-03 by pointing at the new
+    =bisos.postgres= package (=/bisos/git/bxRepos/bisos-pip/postgres=; under git; its
+    =AI-WorkPlan.org= Stage 1 holds the decisions). =airflow-sbom.pcs= still carries the
+    PostgreSQL install and role/db setup, deliberately: this host is a privileged
+    container, so nothing is rebuilt here. The airflow-side edit is bisos.postgres 1.8,
+    to be done when capabilities are rebuilt in a VM.
+  - Stage 3: one open TODO (improving =airflowAdmin.cs=). Adopting afctl/airflint/etc.
+    was decided 2026-10-03: nothing goes into the sbom (results in =AI-WorkPlan.org=). The airflow-user/=/opt/airflow= TODO was verified as
     implemented and marked DONE 2026-10-01. One deliberate deviation from its
     spec: there is no per-app venv; Airflow uses the shared =/bisos/venv/py3/asc=.
   - 4.1--4.3, 4.7 and 4.8 were completed and archived 2026-10-01
@@ -50,27 +58,28 @@ Last updated: 2026-10-01.
 
 ** Known gaps
 
-  - *Version floor* (4.5): =apache-airflow>=2.9.0=, but the units need Airflow 3
-    (=api-server=, =dag-processor=, the Task Execution API). Masked because
-    3.3.1 installs.
-  - *No library surface* (4.4): =py3/bisos/airflow/__init__.py= is empty.
-    =airflowAdmin.cs= and =quickAirflow.cs= are "starting point" CSs.
-  - *=AIRFLOW_HOME= in three places* (4.6): =airflow-sbom.pcs=,
-    =airflowAdmin.cs= and the generated =/etc/default/airflow=.
+  - *=airflowAdmin.cs= and =quickAirflow.cs= are "starting point" CSs.* The
+    library surface is now only =airflowInfo= (4.4); the Stage 3 TODO on
+    bringing the application scripts in is still open.
   - *Bare =.pcs= names in the CBS*: =airflow-cbs.pcs= names its sbom and units
-    by basename, and =bisos.capability= runs them through bash. The package is
-    not pip-installed and the asc copies are deleted, so these names resolve
-    only with cwd =py3/bin/= (=.= is on PATH). Possibly breaks CBM-driven
-    materialization; untested.
+    by basename, and =bisos.capability= runs them through bash. Since
+    2026-10-03 the package is an editable install in =/bisos/venv/py3/bisos3=
+    and =/bisos/venv/py3/devbin/= symlinks the commands onto PATH, so the names
+    should resolve; a CBM-driven materialization has not been tried since. The
+    install also left *copies* of the scripts in =bisos3/bin/=; they go stale,
+    and =pypiProc.sh -i pkgReInstall edit /bisos/venv/py3/bisos3= refreshes them.
   - *Stale "four units" in source and figure*:
-    - =airflow-sbom.pcs -i readme= (also omits =asyncpg=);
     - =airflowAdmin.cs= (=servicesInfo= text ~198/~320, a SQLite comment ~110);
+    (the =-i readme= of the sbom was fixed 2026-10-03)
     - =py3/images/airflow-graphviz.pcs=, its figure and its caption (no
       =dag-processor=).
   - *=/etc/default/airflow= is write-once*: it is generated only when absent,
     so later generator lines never reach existing hosts. Harmless on this
     host, because =airflow.cfg= sets =[core] execution_api_server_url= and
-    =[api] base_url= (verified 2026-10-01).
+    =[api] base_url= (verified 2026-10-01). Read-only comparison on 2026-10-03:
+    the live file lacks exactly =AIRFLOW__API__BASE_URL= and
+    =AIRFLOW__CORE__EXECUTION_API_SERVER_URL=; nothing differs or is extra.
+    =airflowAdmin.cs -i driftCheck= reports this.
   - *Aspirational panels*: =dagDevelopmentTesting=, =maintenanceAndDb=,
     =monitoringLoggingAlerting=, =scalingExecutors= and =userManagement= have
     no code behind them. Each opens with a status note listing its conflicts.
@@ -95,18 +104,33 @@ Last updated: 2026-10-01.
      |                                  (bisos.debian systemd_seedInfo; User=airflow)
      '-- assemble  airflow-assemble.cs  -> airflow-here-dns.pcs (bisos.dnsCap, /etc/hosts)
                                         -> airflow-wvd.pcs      (bisos.webCap, nginx vhost)
-  Operator CSs: airflowAdmin.cs (host/services/users/DAGs info), quickAirflow.cs (CLI cheat sheet)
+  Operator CSs: airflowAdmin.cs (host/services/users/DAGs info, driftCheck), quickAirflow.cs (CLI cheat sheet)
+  Library:      py3/bisos/airflow/airflowInfo.py   (read by every file above)
   #+end_example
 
-  - All code is in =py3/bin/=. Port from =bisos.banna= =tcpPortsList['airflow']=
-    (24006); FQDN =airflow.here=.
+  ** Library: =airflowInfo=
+
+  =py3/bisos/airflow/airflowInfo.py= is the single, pure source of the account,
+  =AIRFLOW_HOME=, =/etc/default/airflow=, the venv, fqdn, banna port, the
+  PostgreSQL connection string and the version floor (=>=3.0=). It also has
+  =envFileContent()=, =sysdServiceLines()=, =envFileDrift()= and =unitDrift()=.
+  The sbom, the five units, dns, wvd, =airflowAdmin.cs= and =quickAirflow.cs=
+  read it. Checked 2026-10-03 without running anything: the rendered unit text
+  of all five units is identical to what the old code produced and to the
+  installed =.service= files; the rendered account/env bash is syntactically
+  valid and its env-file block writes exactly =envFileContent()=.
+  Its tests are the pure block at the end of =py3/tests/verify.sh= (9 checks,
+  all passed when run on their own).
+
+  - Code is in =py3/bin/=, plus the library in =py3/bisos/airflow/=. Port from
+    =bisos.banna= =tcpPortsList['airflow']= (24006); FQDN =airflow.here=.
   - =airflow-db= is a oneshot =db migrate= after =postgresql.service=; the other
     four =Requires=/=After= it.
   - Docs: =README.org= and Blee panels under =py3/panels/bisos.airflow/=
     (top-level overview, =airflowUsage= authoritative, =serverSetup= current,
     five aspirational). The panel subtree has its own =AI-*= overlay.
-  - Not pip-installed here. Run commands by full path under
-    =/bisos/git/bxRepos/bisos-pip/airflow/py3/bin/=.
+  - Editable install in =/bisos/venv/py3/bisos3= since 2026-10-03 (the =.pcs= files
+    import =bisos.airflow=); commands are on PATH via =/bisos/venv/py3/devbin/=.
 
 * What Works
 
@@ -131,6 +155,10 @@ Last updated: 2026-10-01.
     PostgreSQL under =policy-rc.d=, first-run ordering.
   - Any Airflow other than 3.3.x.
   - Panels after Blee dblock regeneration.
+  - After the =airflowInfo= switch (2026-10-03): =airflowAdmin.cs -i driftCheck=, the
+    sbom run (=sbom_fullUpdate=), the =.pcs= units under =cbs_materialize=, and the
+    whole =verify.sh=. Only static and read-only checks were made.
+  - The new floor =apache-airflow>=3.0= against a fresh pip install.
 
 * Key Design Decisions
 
@@ -150,7 +178,7 @@ Last updated: 2026-10-01.
   - *An absolute =cbsSpec= in the CBM leaf*, so PATH order can't redirect
     materialization. Before 2026-10-01, stale =/bisos/asc/web/bin/= copies
     shadowed the package on PATH (archived 4.3). "Make the package win on
-    PATH" was not an option, because it is not pip-installed.
+    PATH" was not an option, because it was not pip-installed (it is, since 2026-10-03).
   - *sbom pseudo-packages* (=airflowAcctEnvSetup=, =airflowPostgresSetup=) run on
     every =sbom_fullUpdate=: they must stay idempotent, and their order in
     =aptPkgsList= is load-bearing.
@@ -162,13 +190,19 @@ Last updated: 2026-10-01.
 
   - =py3/panels/bisos.airflow/airflowUsage/= --- the authoritative package
     description; =@=-imported by downstream deployments. Tracked in git.
-    Verified 2026-10-01.
+    Verified 2026-10-01; prose edited 2026-10-03 for =airflowInfo=, the =>=3.0= floor, =driftCheck=
+    and the editable install (the edit is not re-verified: =driftCheck= and the sbom were not run).
+    Dblocks not regenerated in Blee.
   - =/bisos/git/bxRepos/bxObjects/bro_rawBisos= --- owns the planted CBM leaf.
     Docs updated 2026-10-01. Its =nginx= and =reactPlus= leaves still have
     =cbsSpec= under =/bisos/asc/web/bin/= (valid today; same move pending).
   - =/git/rana/site-status-scripts/airflow/AI-Activity.org= --- the first
     downstream consumer, holding the instance facts (DAGs, venv bridging). Its
     re-pointed import was *uncommitted* as of 2026-10-01.
+  - =/bisos/git/bxRepos/bisos-pip/postgres= (=bisos.postgres=; under git, uncommitted) --- the bedrock
+    PostgreSQL package that TODO 4.3.1 points to. Its =AI-DevStatus.org= also records the cross-project
+    edits of 2026-10-03 (the BISOS vocabulary in the templates and the terminology panel, and the VNC
+    Stage 3 in =/bisos/core/bsip/bin/=).
   - =AI-Outputs.org= (symlink; real file in =blee-binders=, under git) ---
     cross-project ledger. Its open =bisos.airflow= entries mirror 4.4--4.6
     plus the Blee-dblocks task.

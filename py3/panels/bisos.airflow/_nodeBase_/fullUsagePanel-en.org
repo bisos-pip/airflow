@@ -50,6 +50,13 @@ triggerer, dag-processor) is its own systemd unit. =airflow.here= is exposed thr
 an nginx vhost. A CBM leaf under =/bisos/platform/sys/cbm/collective/hereWeb/airflow/=
 materializes the whole bundle by pointing at the package's =airflow-cbs.pcs=.
 
+The facts every part of the package must agree on (account, =AIRFLOW_HOME=, environment file,
+venv, fqdn, port, DB connection string, version floor) have one source, the library module
+=bisos.airflow.airflowInfo=; see the airflowUsage panel. PostgreSQL itself is planned to move to its
+own bedrock package, =bisos.postgres= (it exists, but this package still installs PostgreSQL); the
+airflow side would keep only its own account, role and
+connection string.
+
 *** Child Panels
 
 | Panel                       | Content                                                                  | Status        |

@@ -96,13 +96,24 @@ either there, or as =[core] execution_api_server_url= / =[api] base_url= in
 Run Airflow CLI commands the way the units do: as =airflow=, with that
 environment, e.g. =sudo -u airflow env $(sudo cat /etc/default/airflow | grep -v '^#') /bisos/venv/py3/asc/bin/airflow dags list=.
 
+*One source for these facts.* The account, =AIRFLOW_HOME=, the environment file, the venv,
+the fqdn, the port, the metadata DB connection string and the version floor are defined
+once, in =bisos.airflow.airflowInfo= (=py3/bisos/airflow/airflowInfo.py=). The sbom, all
+five units, =airflow-here-dns.pcs=, =airflow-wvd.pcs=, =airflowAdmin.cs= and =quickAirflow.cs=
+read it, so they cannot disagree. The module is pure --- no side effects --- and also holds
+the generators for the text of =/etc/default/airflow= and of the units' =User=/=Group=/
+=EnvironmentFile= lines, and the functions that compare them with a live host.
+=airflowAdmin.cs -i driftCheck= runs that comparison, read-only. A live file that lacks a
+generated line is reported, not fixed: the file stays write-once.
+
 *** Packages and the Metadata DB
 
 =airflow-sbom.pcs= (a =bisos.sbom= planted file) installs:
 
 - apt: =python3=, =python3-pip=, =python3-venv=, =build-essential=, =libpq-dev=,
   =libssl-dev=, =libffi-dev=, =pkg-config=, =postgresql=.
-- pip, into =/bisos/venv/py3/asc=: =apache-airflow=, =psycopg2= (sync driver) and
+- pip, into =/bisos/venv/py3/asc=: =apache-airflow= (=>=3.0=: the units need =api-server=,
+  =dag-processor= and the Task Execution API, which only Airflow 3 has), =psycopg2= (sync driver) and
   =asyncpg= (async driver --- Airflow 3 builds an async engine too; without it
   every CLI call and unit fails with =ModuleNotFoundError: asyncpg=).
 
@@ -204,10 +215,18 @@ DAG and is documented per deployment.
 | =airflow-cbs.pcs -i cbs_materialize=  | sbom + assemble + ensure all units                               |
 | =airflow-<role>-sysd.pcs -i sysdSysUnit status= | per-unit status (also =ensure=)                        |
 | =airflowAdmin.cs=                     | host/services/users/DAGs info (starting point, not complete)     |
+| =airflowAdmin.cs -i driftCheck=       | read-only: live env file and units against =airflowInfo=         |
 | =quickAirflow.cs=                     | quick-reference menu of Airflow CLI commands (starting point)    |
 
-=bisos.airflow= is not pip-installed, so none of these are on PATH; invoke them
-by full path under =/bisos/git/bxRepos/bisos-pip/airflow/py3/bin/=.
+The =.pcs= files import =bisos.airflow=, so the package must be installed. On this host it is
+an editable install into =/bisos/venv/py3/bisos3=, made with
+=pypiProc.sh -i pkgReInstall edit /bisos/venv/py3/bisos3=. That also symlinks the commands
+into =/bisos/venv/py3/devbin/=, which puts them on PATH, so a bare name such as
+=airflow-cbs.pcs= resolves to the package source. The install also leaves *copies* of the
+scripts in =/bisos/venv/py3/bisos3/bin/=; they go stale as =py3/bin/= changes, so run
+=pkgReInstall= again after changing a script. Without an install, invoke the commands by
+full path under =/bisos/git/bxRepos/bisos-pip/airflow/py3/bin/=, which also needs
+=bisos.airflow= importable.
 
 ** -B|
 * +
@@ -224,6 +243,7 @@ by full path under =/bisos/git/bxRepos/bisos-pip/airflow/py3/bin/=.
 ** [[elisp:(show-all)][(>]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(outline-show-subtree+toggle)][| /Notes, Ideas, Tasks, Agenda:/ |]] <<Tasks>>   [[elisp:(org-shifttab)][<)]] E|
 ####+END
 *** Content last verified against source and the live units on 2026-10-01.
+*** 2026-10-03: the =airflowInfo= source, the editable install and the version floor were added from the source. Checked against the live host by reading only: the unit identity lines of all five units match, and the live =/etc/default/airflow= lacks the =BASE_URL= and =EXECUTION_API_SERVER_URL= lines. =airflowAdmin.cs -i driftCheck= itself and the sbom were not run.
 ####+BEGIN: blee:bxPanel:evolutionMaintainers
 ** [[elisp:(show-all)][(>]] [[elisp:(describe-function 'org-dblock-write:blee:bxPanel:evolutionMaintainers)][dbf]]
 ** [[elisp:(show-all)][|n]]  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_  _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_       [[elisp:(org-cycle)][| /Bug Reports, Development Team:/ | ]]  <<Maintainers>>

@@ -39,7 +39,7 @@ m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
 expectedCmnds = [
-    'examples', 'fullUpdate', 'hostInfo', 'servicesInfo', 'usersInfo',
+    'examples', 'fullUpdate', 'hostInfo', 'servicesInfo', 'usersInfo', 'driftCheck',
 ]
 
 failed = 0
@@ -55,3 +55,25 @@ if failed:
 else:
     print('airflowAdmin.cs: all cases PASS')
 " 2>/dev/null || true
+
+# --- bisos.airflow.airflowInfo: pure module, generators agree with the facts ---
+
+lpDo python3 -c "
+from bisos.airflow import airflowInfo as m
+i = m.airflowInfo
+env = m.envFileContent()
+failed = 0
+for name, ok in [
+    ('home in env file', f'AIRFLOW_HOME={i.home}\n' in env),
+    ('env file is 5 lines', len(env.splitlines()) == 5),
+    ('execution url has the banna port', f':{i.portNu}/execution/' in env),
+    ('service lines name the account', m.sysdServiceLines().startswith(f'User={i.acctName}\n')),
+    ('binPath is under the virtenv', i.binPath.parent.parent == i.virtenv),
+    ('a generated env file shows no drift', not any(m.envFileDrift(env).values())),
+    ('a missing key is reported', m.envFileDrift('AIRFLOW_HOME=/x\n')['missing'] != []),
+    ('a changed value is reported', m.envFileDrift(env.replace(str(i.home), '/x'))['differs'] != []),
+    ('a unit lacking the identity lines is reported', len(m.unitDrift('[Service]\n')) == 3),
+]:
+    print(('  [PASS] ' if ok else '  [FAIL] ') + name); failed += (not ok)
+raise SystemExit(1 if failed else 0)
+" || true

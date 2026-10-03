@@ -17,6 +17,7 @@ from bisos.debian import systemd_seedInfo
 from bisos.debian import systemd_seed as systemd_seed  # noqa
 
 from bisos.basics import pathPlus
+from bisos.airflow.airflowInfo import sysdServiceLines
 
 def sysdUnitFileFunc() -> str | None:
     """Produce the unit file as a string."""
@@ -31,10 +32,7 @@ After=network.target airflow-db.service
 Requires=airflow-db.service
 
 [Service]
-User=airflow
-Group=airflow
-EnvironmentFile=/etc/default/airflow
-ExecStart={execPath} scheduler
+{sysdServiceLines()}ExecStart={execPath} scheduler
 Restart=on-failure
 RestartSec=10
 

@@ -89,6 +89,8 @@ from bisos.common import csParam
 import collections
 ####+END:
 
+from bisos.airflow.airflowInfo import airflowInfo
+
 """ #+begin_org
 *  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  CsFrmWrk   [[elisp:(outline-show-subtree+toggle)][||]] ~csuList emacs-list Specifications~  [[elisp:(blee:org:code-block/above-run)][ /Eval Below/ ]] [[elisp:(org-cycle)][| ]]
 #+BEGIN_SRC emacs-lisp
@@ -257,7 +259,7 @@ class airflowDirectCmnds(cs.Cmnd):
 
         cs.examples.menuSection('/Getting In/')
 
-        literal("# http://airflow.here         -- user: admin")
+        literal(f"# {airflowInfo.baseUrl}         -- user: admin")
         literal("sudo cat $AIRFLOW_HOME/simple_auth_manager_passwords.json.generated   # the password")
         literal("airflow-sbom.pcs -i adminPasswd                                       # same, as root")
         literal("# To set it:  echo '{\"admin\": \"airflow\"}' | sudo -u airflow tee that file")
@@ -290,7 +292,7 @@ class airflowDirectCmnds(cs.Cmnd):
         literal("airflow tasks test <dag_id> <task_id>      # run ONE task, no scheduling")
         literal("airflow dags show <dag_id> --save /tmp/dag.png    # Graph view, needs graphviz pkg")
         literal("# By hand the CLI needs BOTH: sudo -u airflow (DB is airflow-owned) and")
-        literal("# env AIRFLOW_HOME=... (/etc/default/airflow is read by systemd, not shells).")
+        literal(f"# env AIRFLOW_HOME=... ({airflowInfo.envFile} is read by systemd, not shells).")
 
         return(cmndOutcome)
 

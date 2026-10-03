@@ -120,10 +120,29 @@ reason is recorded in the =airflowAcctEnvSetup= docstring (l.52--55).
 =SQL_ALCHEMY_CONN= and the Airflow 3 =BASE_URL= / =EXECUTION_API_SERVER_URL=
 lines.
 
-** TODO [#A] Look into adoption of afctl, airflint, airflow-diagrams, airflow-maintenance-dags
+** DONE [#A] Look into adoption of afctl, airflint, airflow-diagrams, airflow-maintenance-dags
+CLOSED: [2026-10-03 Sat]
 SCHEDULED: <2026-09-21 Mon 12:53>
 Are they useful? Where are they? Should they be added to -sbom.pcs
 ----- AI Results: ------
+Decision: *add nothing to =airflow-sbom.pcs=.* None of the four is installed here (the asc
+venv has only =apache-airflow= 3.3.1). They are developer or operator tools, not platform
+dependencies of the units. The sources were web searches only; the notes on project
+currency and Airflow 3 compatibility are recollection, *not verified*.
+
+| Tool                       | Where                      | What it does                                         | Relevance                                              |
+|----------------------------+----------------------------+------------------------------------------------------+--------------------------------------------------------|
+| afctl                      | github.com/qubole/afctl    | Scaffold and deploy Airflow projects; needs Docker   | Low: we run systemd, not Docker; seems dormant         |
+| airflint                   | github.com/feluelle/airflint | Rewrites DAGs to best practices (function-level imports, Jinja instead of =Variable.get=); alpha | Medium, as a pre-commit hook in the DAG-authoring repo, not in the sbom |
+| airflow-diagrams           | pypi.org/project/airflow-diagrams | Service-level diagrams of DAGs via the REST API and Graphviz | Low: docs show =/api/v1=, Airflow 3 serves =/api/v2= (untested); =dags show= and the UI Graph view already cover it |
+| airflow-maintenance-dags   | github.com/teamclairvoyant/airflow-maintenance-dags | DAGs for log/metadata cleanup and killing stuck tasks | Medium as an idea only: =airflow db clean= is built in |
+
+Follow-ups, none scheduled:
+- airflint: try it on the DAG repo (=/git/rana/site-status-scripts/airflow=), which holds
+  =ERICSSON_SITE_STATUS.py=, once that repo is git-clean (it edits source files).
+- Log and DB cleanup: a small DAG or systemd timer calling =airflow db clean=. It belongs to
+  the aspirational =maintenanceAndDb= panel, and is not started.
+- airflow-diagrams: revisit only if someone confirms Airflow 3 (=/api/v2=) support.
 
 ** TODO [#A] Improve  py3/bin/airflowAdmin.cs :aiAndMe:
 SCHEDULED: <2026-09-21 Mon 12:53>
@@ -140,7 +159,8 @@ Goal: Update and implement images, panels and tests workplan.
 
 * Stage 4 TODOs
 ** +
-** TODO [#B] <<4.3.1>> airflow-sbom.pcs includes postgress. There should be a postgress-sbom.pcs :aiAndMe:
+** DONE [#B] <<4.3.1>> airflow-sbom.pcs includes postgress. There should be a postgress-sbom.pcs :aiAndMe:
+CLOSED: [2026-10-03 Sat]
 SCHEDULED: <2026-10-01 Thu>
 :PROPERTIES:
 :ORIGIN: Mohsen
@@ -149,6 +169,16 @@ SCHEDULED: <2026-10-01 Thu>
 
 How would this impact airflow  user and other  aspects that are now intertwined.
 ----- Results: ------
+Handled by a new package, =bisos.postgres=, at =/bisos/git/bxRepos/bisos-pip/postgres=
+(its =AI-WorkPlan.org= Stage 1 holds the discussion and decisions). PostgreSQL becomes the
+bedrock database of BISOS, with airflow as a tenant: a role plus a same-named database,
+peer authentication from the like-named OS account.
+
+*Deliberately left alone here*: =airflow-sbom.pcs= is unchanged. This host is a privileged
+container, not the place for a full CBM rebuild, and the PostgreSQL install here works.
+The airflow-side edits (remove the server, cluster-start, =max_connections= and =libpq-dev=
+parts; keep the =airflow= account, the =/etc/default/airflow= connection string and the pip
+drivers) are bisos.postgres 1.8, to be done when the capabilities are rebuilt in a VM.
 
 
 ** TODO [#A] <<4.4>> No =bisos.airflow= library surface :aiAndMe:
@@ -163,6 +193,22 @@ SCHEDULED: <2026-10-01 Thu>
 complete". The package is CLI/systemd glue only, so there is nowhere natural
 for shared constants or config introspection.
 ----- Results: ------
+Implemented 2026-10-03, awaiting review before DONE. =py3/bisos/airflow/airflowInfo.py=
+is the library surface: a pure frozen dataclass instance =airflowInfo=, the generators
+=envFileContent()= and =sysdServiceLines()=, and =envFileDrift()= / =unitDrift()=.
+Consumers switched: =airflow-sbom.pcs=, the five =airflow-*-sysd.pcs=, =airflow-here-dns.pcs=,
+=airflow-wvd.pcs=, =airflowAdmin.cs=, =quickAirflow.cs=. New =airflowAdmin.cs -i driftCheck=
+(read-only). README, the top-level and airflowUsage panels and AI-DevStatus describe it.
+
+Checked without running anything: the unit text rendered from all five new files is identical
+to the old and to the installed =.service= files; the sbom's account/env bash passes =bash -n=
+and its env-file block writes exactly =envFileContent()=; the pure block of =verify.sh=
+passes (9 checks); =pyflakes= shows no new warnings. *Not run*: =driftCheck=, =sbom_fullUpdate=,
+=cbs_materialize=, the whole =verify.sh=.
+
+Prerequisite: the =.pcs= files import =bisos.airflow=, so it must be installed. Done on this host
+as an editable install (=pypiProc.sh -i pkgReInstall edit /bisos/venv/py3/bisos3=). It leaves
+script copies in =bisos3/bin/= that go stale; re-run =pkgReInstall= after changing scripts.
 
 ** TODO [#A] <<4.5>> Version floor admits an Airflow that cannot work :aiAndMe:
 SCHEDULED: <2026-10-01 Thu>
@@ -180,6 +226,8 @@ only because 3.3.1 is what actually installs.
 *Action*: raise the floor to =>=3.0= (or pin exactly), or make the
 subcommand version-aware.
 ----- Results: ------
+Implemented 2026-10-03, awaiting review before DONE. The floor is =airflowInfo.minVersion=
+(=3.0=), used by the sbom as =pipVersionSpec= (=>=3.0=). Not tried against a fresh pip install.
 
 ** TODO [#A] <<4.6>> =AIRFLOW_HOME= duplicated with nothing enforcing agreement :aiAndMe:
 SCHEDULED: <2026-10-01 Thu>
@@ -203,6 +251,12 @@ resolved to *the invoking user's* home rather than the installation's ---
 but replaced it with a second hardcoded constant rather than resolving the
 TODO. Blocked on there being nowhere to put it (see next).
 ----- Results: ------
+Implemented 2026-10-03, awaiting review before DONE, together with 4.4. =AIRFLOW_HOME= and
+the other shared facts are defined once, in =airflowInfo=; the generated =/etc/default/airflow=
+text comes from =envFileContent()=. Agreement is checked by =airflowAdmin.cs -i driftCheck=.
+Read-only comparison with this host: the live file lacks =AIRFLOW__API__BASE_URL= and
+=AIRFLOW__CORE__EXECUTION_API_SERVER_URL=, and nothing differs or is extra. The file stays
+write-once; the lack is reported, not fixed (harmless here: =airflow.cfg= sets both).
 
 
 ** -

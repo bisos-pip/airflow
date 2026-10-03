@@ -17,6 +17,7 @@ from bisos.debian import systemd_seedInfo
 from bisos.debian import systemd_seed as systemd_seed  # noqa
 
 from bisos.basics import pathPlus
+from bisos.airflow.airflowInfo import sysdServiceLines
 
 def sysdUnitFileFunc() -> str | None:
     """Produce the unit file as a string."""
@@ -39,10 +40,7 @@ Requires=postgresql.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-User=airflow
-Group=airflow
-EnvironmentFile=/etc/default/airflow
-ExecStart={execPath} db migrate
+{sysdServiceLines()}ExecStart={execPath} db migrate
 
 [Install]
 WantedBy=multi-user.target

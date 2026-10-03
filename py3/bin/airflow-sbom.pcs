@@ -17,29 +17,15 @@ from bisos.basics import pyRunAs
 # import collections
 
 from bisos.sbom import pkgsSeed  # pkgsSeed.plantWithWhich("seedSbom.cs")
-from bisos.banna import tcpPorts as bannaTcpPorts
+from bisos.airflow.airflowInfo import airflowInfo, envFileContent
 
 ap = pkgsSeed.aptPkg
 pp = pkgsSeed.pipPkg
 
-# Same source the webserver unit uses for its --port. The api-server's port must
-# also reach the task-execution layer --- see airflowAcctEnvSetup() below.
-_portNu = bannaTcpPorts.tcpPortsAssignedList.tcpPortsList['airflow'].portNu
-_airflowFqdn = "airflow.here"
-
-pkgsSeed.pkgsSeedInfo.virtenv = "/bisos/venv/py3/asc"
-
-# AIRFLOW_HOME for the systemd-managed installation. Runtime state only (dags,
-# logs, airflow.cfg, metadata DB) --- the pyvenv is pkgsSeedInfo.virtenv above.
-# Must agree with what airflowAcctEnvSetup() writes to /etc/default/airflow,
-# which is what the airflow-*.service units read via EnvironmentFile.
-_airflowHome = "/opt/airflow"
-
-# Metadata DB. Peer auth over the unix socket: the connection carries no user
-# and no password, so PostgreSQL maps the *OS* account to the like-named role.
-# That is why the role must be called airflow and why no secret appears here,
-# in /etc/default/airflow, or in airflow.cfg. See airflowPostgresSetup().
-_pgConnStr = "postgresql+psycopg2://@/airflow?host=/var/run/postgresql"
+# The facts of the installation --- account, AIRFLOW_HOME, env file, virtenv, fqdn, port,
+# metadata DB connection string, version floor --- come from bisos.airflow.airflowInfo,
+# the one source the units, airflowAdmin.cs, dns and vhost read too.
+pkgsSeed.pkgsSeedInfo.virtenv = str(airflowInfo.virtenv)
 
 def airflowAcctEnvSetup():
     """Setup the airflow account and its environment. Not an apt package.
@@ -56,40 +42,28 @@ def airflowAcctEnvSetup():
     outcome = b.subProc.WOpW(invedBy=None, log=1).bash(
         f"""
 # 1. Dedicated system user -- only when absent, useradd exits 9 otherwise
-id airflow >/dev/null 2>&1 || sudo useradd -r -m -s /bin/bash airflow
+id {airflowInfo.acctName} >/dev/null 2>&1 || sudo useradd -r -m -s /bin/bash {airflowInfo.acctName}
 
 # 2. AIRFLOW_HOME and the dirs airflow must own. No venv here -- see docstring.
-sudo mkdir -p {_airflowHome}/dags {_airflowHome}/logs
-sudo chown -R airflow:airflow {_airflowHome}
+sudo mkdir -p {airflowInfo.home}/dags {airflowInfo.home}/logs
+sudo chown -R {airflowInfo.acctName}:{airflowInfo.acctName} {airflowInfo.home}
 
 # 3. tmpfiles daemon configuration for PID and socket files
-echo "D /run/airflow 0755 airflow airflow -" | sudo tee /etc/tmpfiles.d/airflow.conf >/dev/null
+echo "D /run/airflow 0755 {airflowInfo.acctName} {airflowInfo.acctName} -" | sudo tee /etc/tmpfiles.d/airflow.conf >/dev/null
 sudo systemd-tmpfiles --create
 
 # 4. EnvironmentFile for the airflow-*.service units. Written only when absent,
 #    so hand-added overrides survive re-runs. systemd reads it as root before
 #    dropping to User=airflow, so root:airflow 640 suffices: readable by the
 #    service account, not writable by it.
-# AIRFLOW__API__BASE_URL / AIRFLOW__CORE__EXECUTION_API_SERVER_URL are not
-# optional niceties. Airflow 3 task processes reach the api-server over HTTP
-# (the Task Execution API) instead of touching the DB; when BASE_URL is unset
-# the task SDK falls back to http://localhost:8080. Because the port here comes
-# from the bisos.banna registry rather than Airflow's default, every task then
-# dies with [Errno 111] Connection refused before it starts --- while all units
-# stay green and the UI serves normally.
-# base_url is the address humans browse (through the nginx vhost); the execution
-# URL goes straight to the api-server so task execution does not depend on nginx.
-if [ ! -f /etc/default/airflow ] ; then
-    printf '%s\\n%s\\n%s\\n%s\\n%s\\n' \\
-        'AIRFLOW_HOME={_airflowHome}' \\
-        'AIRFLOW__DATABASE__SQL_ALCHEMY_CONN={_pgConnStr}' \\
-        'AIRFLOW__API__BASE_URL=http://{_airflowFqdn}' \\
-        'AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://localhost:{_portNu}/execution/' \\
-        '# Add any overrides or environment variables needed by your DAGs here' \\
-        | sudo tee /etc/default/airflow >/dev/null
+# The content, and why BASE_URL and EXECUTION_API_SERVER_URL matter, is in
+# airflowInfo.envFileContent().
+if [ ! -f {airflowInfo.envFile} ] ; then
+    sudo tee {airflowInfo.envFile} >/dev/null <<'AIRFLOW_ENV_EOF'
+{envFileContent()}AIRFLOW_ENV_EOF
 fi
-sudo chown root:airflow /etc/default/airflow
-sudo chmod 640 /etc/default/airflow
+sudo chown root:{airflowInfo.acctName} {airflowInfo.envFile}
+sudo chmod 640 {airflowInfo.envFile}
 """)
     if outcome.isProblematic():
         b_io.eh.badOutcome(outcome)
@@ -158,7 +132,7 @@ aptPkgsList = [
 ]
 
 pipPkgsList = [
-    pp("apache-airflow", ver=">=2.9.0"),
+    pp("apache-airflow", ver=airflowInfo.pipVersionSpec),
     pp("psycopg2"),                 # PostgreSQL driver for the metadata DB (sync)
     pp("asyncpg"),                  # ... and async. Airflow 3 builds an async
                                     # engine too; without this every CLI call and
@@ -195,27 +169,27 @@ class readme(cs.Cmnd):
 ** Scope: Apache Airflow -- workflow orchestration platform on Debian 12.
 
 ** What this installs:
-  1) The airflow system user, {_airflowHome} (AIRFLOW_HOME) and
+  1) The airflow system user, {airflowInfo.home} (AIRFLOW_HOME) and
      /etc/default/airflow -- via the airflowAcctEnvSetup pseudo-package.
   2) System apt packages: python3, python3-pip, python3-venv, build-essential,
      libpq-dev, libssl-dev, libffi-dev, pkg-config, postgresql.
-  3) pip packages: apache-airflow (>=2.9.0) and psycopg2, installed into
+  3) pip packages: apache-airflow ({airflowInfo.pipVersionSpec}), psycopg2 and asyncpg, installed into
      {pkgsSeed.pkgsSeedInfo.virtenv}.
   4) The PostgreSQL metadata DB -- role and database both named airflow --
      via the airflowPostgresSetup pseudo-package.
 
-** Systemd-managed setup (how this host runs it): the four airflow-*.service
+** Systemd-managed setup (how this host runs it): the five airflow-*.service
    units run as User=airflow and take AIRFLOW_HOME from
    /etc/default/airflow. See airflow-cbs.pcs / cbmProc-airflow.spcs.
        airflow-sbom.pcs -i sbom_fullUpdate     # install, then materialize units
        # credentials auto-generated at:
-       #   {_airflowHome}/simple_auth_manager_passwords.json.generated
+       #   {airflowInfo.home}/simple_auth_manager_passwords.json.generated
        # username: admin   password: airflow-sbom.pcs -i adminPasswd
 
 ** Metadata DB: PostgreSQL, provisioned by this package (see 4 above). The
    connection string is set as AIRFLOW__DATABASE__SQL_ALCHEMY_CONN in
    /etc/default/airflow, which overrides airflow.cfg:
-       {_pgConnStr}
+       {airflowInfo.pgConnStr}
    It carries no user and no password --- peer auth over the unix socket maps
    the airflow OS account to the airflow role. Airflow's stock SQLite backend
    is dev/test only: single-writer, and the scheduler contends with itself
@@ -263,7 +237,7 @@ class adminPasswd(cs.Cmnd):
         if self.invocationValidate(rtInv, cmndOutcome, callParamsDict, None).isProblematic():
             return failed(cmndOutcome)
 
-        pwFile = pathlib.Path(_airflowHome) / "simple_auth_manager_passwords.json.generated"
+        pwFile = pathlib.Path(airflowInfo.home) / "simple_auth_manager_passwords.json.generated"
 
         contentStr = pyRunAs.as_root_readFromFile(pwFile)
         if not contentStr:
@@ -314,7 +288,7 @@ def examples_csu() -> b.op.Outcome:
     literal("airflow-sbom.pcs -i sbom_fullUpdate")
 
     cs.examples.menuChapter('*Airflow Home and Environment*')
-    literal(f"export AIRFLOW_HOME={_airflowHome}   # as the units do, via /etc/default/airflow")
+    literal(f"export AIRFLOW_HOME={airflowInfo.home}   # as the units do, via /etc/default/airflow")
     literal("cat /etc/default/airflow   # sudo, it is root:airflow 640")
     literal("echo $AIRFLOW_HOME")
     literal(f"{airflow} config list")
@@ -325,9 +299,9 @@ def examples_csu() -> b.op.Outcome:
     literal(f"{airflow} db check            # verify DB connectivity")
 
     cs.examples.menuChapter('*User Management*')
-    literal(f"# credentials auto-generated at: {_airflowHome}/simple_auth_manager_passwords.json.generated")
-    literal(f"sudo cat {_airflowHome}/simple_auth_manager_passwords.json.generated  # airflow-owned")
-    cmnd('adminPasswd', comment=f" # print the auto-generated admin password (reads {_airflowHome} as root)")
+    literal(f"# credentials auto-generated at: {airflowInfo.home}/simple_auth_manager_passwords.json.generated")
+    literal(f"sudo cat {airflowInfo.home}/simple_auth_manager_passwords.json.generated  # airflow-owned")
+    cmnd('adminPasswd', comment=f" # print the auto-generated admin password (reads {airflowInfo.home} as root)")
     literal(f"{airflow} users list")
 
     cs.examples.menuChapter('*Running Airflow (standalone / local testing)*')

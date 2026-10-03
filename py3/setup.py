@@ -43,16 +43,16 @@ def longDescription():
 # b:py3:pypi:setup/version Arguments  :forSys t :forPyPi t :constant "666"
 ####+BEGIN: b:py3:pypi:setup/version :comment "Auto Detected"
 
-# ./pypiUploadVer DID NOT exist -- forPypiVersion=0.13 -- forLocalVersion=0.1 -- constant=NA
+# ./pypiUploadVer DID NOT exist -- forPypiVersion=0.14 -- forLocalVersion=0.13 -- constant=NA
 def pkgVersion():
-        return '0.1'
+        return '0.13'
 
 ####+END:
 
 # b:py3:pypi:setup/requires :extras ; :requirements "requirements.txt" (bring here requirements.txt)
 ####+BEGIN: b:py3:pypi:setup/requires :extras ()
 
-requires = [
+requires = [ 
 "bisos",
 "bisos.b",
 "bisos.banna",
@@ -73,8 +73,7 @@ requires = [
 # b:py3:pypi:setup/scripts :comment
 ####+BEGIN: b:py3:pypi:setup/scripts :comment ""
 
-scripts = [
-'bin/airflowAdmin.cs',
+scripts = [ 
 'bin/airflow-assemble.cs',
 'bin/airflow-cbs.pcs',
 'bin/airflow-dag-processor-sysd.pcs',
@@ -85,6 +84,7 @@ scripts = [
 'bin/airflow-triggerer-sysd.pcs',
 'bin/airflow-webserver-sysd.pcs',
 'bin/airflow-wvd.pcs',
+'bin/airflowAdmin.cs',
 'bin/cbmProc-airflow.spcs',
 'bin/quickAirflow.cs',
 ]
@@ -93,7 +93,7 @@ scripts = [
 # b:py3:pypi:setup/dataFiles :comment
 ####+BEGIN: b:py3:pypi:setup/dataFiles :comment "Instead of ./MANIFEST.in or in pyproject.toml"
 
-data_files = [
+data_files = [ 
 ('',  ['lh-agpl3-LICENSE.txt', '_description.org', 'README.rst']),
 ]
 ####+END:

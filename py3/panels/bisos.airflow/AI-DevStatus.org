@@ -45,7 +45,10 @@ rewritten: whether to implement, keep or drop that scope is undecided.
 - =airflowUsage= was created 2026-10-01 by copying =serverSetup/='s node skeleton and
   renaming its self-paths.
 - Content of =airflowUsage= and =serverSetup= was last verified against source and the
-  live units on 2026-10-01.
+  live units on 2026-10-01. On 2026-10-03 prose was added to =airflowUsage= (the =airflowInfo=
+  single source, the =>=3.0= floor, =driftCheck=, the editable install) and to the top-level panel
+  (=airflowInfo=, PostgreSQL moving to =bisos.postgres=). Those additions were checked from the
+  source and by read-only reads of the live files, not by running the commands.
 
 * What Is Untested / Pending
 
@@ -53,9 +56,10 @@ rewritten: whether to implement, keep or drop that scope is undecided.
   on =airflowUsage/_nodeBase_/fullUsagePanel-en.org=, the top-level panel, and the
   parent =ftoProc.sh= (=nodesList=). Until then =airflowUsage= does not appear in the
   navigators, and its own navigator block is a hand-made placeholder.
-- No =runResult= / =icm:py:cmnd= dblocks yet: the package's commands are not on PATH
-  (not pip-installed), so captured-output blocks would not regenerate. Revisit once
-  it is installed.
+- No =runResult= / =icm:py:cmnd= dblocks yet. Since 2026-10-03 the package is an editable install in
+  =/bisos/venv/py3/bisos3= and the commands are on PATH via =/bisos/venv/py3/devbin/=, so captured-output
+  blocks could now regenerate; revisit (the installed script copies in =bisos3/bin/= go stale: re-run
+  =pypiProc.sh -i pkgReInstall edit /bisos/venv/py3/bisos3= after changing a script).
 
 
 

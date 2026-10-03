@@ -63,6 +63,7 @@ installation.
 - [[#overview][Overview]]
 - [[#capability-materialization][Capability Materialization]]
 - [[#the-5-systemd-units-and-db-init][The 5 systemd Units and DB Init]]
+- [[#the-library-bisosairflowairflowinfo][The Library: bisos.airflow.airflowInfo]]
 - [[#installation][Installation]]
   - [[#installation-with-pip][Installation With pip]]
   - [[#installation-with-pipx][Installation With pipx]]
@@ -104,6 +105,37 @@ All five units, together with package installation, are declared by
 =/bisos/platform/sys/cbm/collective/hereWeb/airflow/cbmProc.spcs= (the package
 ships the same pointer as =py3/bin/cbmProc-airflow.spcs=).
 
+* The Library: bisos.airflow.airflowInfo
+
+The facts of the installation used to be repeated across the sbom, =airflowAdmin.cs=, the
+five units, the DNS and vhost files and the generated =/etc/default/airflow=, with nothing
+making them agree. They now have one source, =py3/bisos/airflow/airflowInfo.py=. It is
+pure: importing it has no side effects and touches no host state.
+
+| Fact                 | =airflowInfo= attribute                                    |
+|----------------------+-------------------------------------------------------------|
+| OS account           | =acctName= (=airflow=; PostgreSQL peer auth maps it to the like-named role) |
+| =AIRFLOW_HOME=       | =home= (=/opt/airflow=), with =dagsDir= and =logsDir=       |
+| Environment file     | =envFile= (=/etc/default/airflow=)                           |
+| Python venv, binary  | =virtenv= (=/bisos/venv/py3/asc=), =binPath=                 |
+| fqdn, port           | =fqdn= (=airflow.here=), =portNu= (from =bisos.banna=)       |
+| Metadata DB          | =pgConnStr=                                                  |
+| URLs                 | =baseUrl=, =executionApiUrl=                                 |
+| Version floor        | =minVersion= (=3.0=), =pipVersionSpec= (=>=3.0=)             |
+| By-hand CLI prefix   | =cliPrefix= (=sudo -u airflow env AIRFLOW_HOME=... airflow=) |
+
+Pure generators sit next to the constants: =envFileContent()= is the text
+=/etc/default/airflow= is generated with, and =sysdServiceLines()= the =User=, =Group= and
+=EnvironmentFile= lines of every unit. =envFileDrift()= and =unitDrift()= compare the live
+files with them. =airflowAdmin.cs -i driftCheck= runs that comparison read-only.
+
+=/etc/default/airflow= is still written only when absent, so hand overrides survive. A
+lack of a generated line in a live file is therefore reported as drift, never fixed.
+
+The sbom, the five units, =airflow-here-dns.pcs=, =airflow-wvd.pcs=, =airflowAdmin.cs= and
+=quickAirflow.cs= all read =airflowInfo=. The =.pcs= files import =bisos.airflow=, so the
+package must be installed (see Installation).
+
 * Installation
 
 The sources for the bisos.airflow pip package are maintained at:\\
@@ -121,6 +153,17 @@ If you need access to bisos.airflow as a python module, install it with pip:
 #+begin_src bash
 pip install bisos.airflow
 #+end_src
+
+Package development, on a host that has the sources, is an editable install with
+=pypiProc.sh=:
+
+#+begin_src bash
+pypiProc.sh -i pkgReInstall edit /bisos/venv/py3/bisos3
+#+end_src
+
+That also symlinks the commands into =/bisos/venv/py3/devbin/=, which puts them on PATH.
+The install copies the scripts into the venv's =bin/= as well; those copies go stale as
+=py3/bin/= changes, so run =pkgReInstall= again after changing a script.
 
 ** Installation With pipx
 
@@ -152,8 +195,10 @@ sub-commands:
 #+begin_src bash
 airflowAdmin.cs -i hostInfo       # fqdn, port, AIRFLOW_HOME, DAG dir, log dir
 airflowAdmin.cs -i servicesInfo   # links for operating the systemd units
+airflowAdmin.cs -i dagsInfo       # list, trigger, pause, graph, parsing health
 airflowAdmin.cs -i usersInfo      # list/create users; default admin/password
-airflowAdmin.cs -i fullUpdate     # all three together
+airflowAdmin.cs -i fullUpdate     # all of the above
+airflowAdmin.cs -i driftCheck     # live env file and units against airflowInfo; read-only
 #+end_src
 
 ** Direct Airflow CLI Cheat Sheet: =quickAirflow.cs=
@@ -170,7 +215,8 @@ quickAirflow.cs
 An overview of the relevant files of the bisos.airflow package (starting-point;
 to be expanded as the package develops):
 
-- =py3/bin/airflowAdmin.cs= --- day-to-day admin CS (hostInfo, servicesInfo, usersInfo, fullUpdate).
+- =py3/bisos/airflow/airflowInfo.py= --- the single source of the installation's facts, the env-file and unit generators, and the drift functions.
+- =py3/bin/airflowAdmin.cs= --- day-to-day admin CS (hostInfo, servicesInfo, dagsInfo, usersInfo, fullUpdate, driftCheck).
 - =py3/bin/quickAirflow.cs= --- direct-command cheat sheet for the =airflow= CLI and systemd units.
 - =py3/bin/airflow-cbs.pcs= --- CBS declaring the bundle (sbom + 5 sysd units + assemble).
 - =py3/bin/cbmProc-airflow.spcs= --- planted CBM pointer leaf that materializes the CBS.
@@ -181,7 +227,7 @@ to be expanded as the package develops):
 - =py3/bin/airflow-here-dns.pcs= --- =.here= fake-domain DNS registration for =airflow.here=.
 - =py3/bin/airflow-wvd.pcs= --- nginx virtual host for =airflow.here=.
 - =py3/images/airflow-graphviz.pcs= --- source for the Capability Materialization figure.
-- =py3/tests/verify.sh= --- smoke test for =airflowAdmin.cs= and =quickAirflow.cs=.
+- =py3/tests/verify.sh= --- smoke test for =airflowAdmin.cs=, =quickAirflow.cs= and =airflowInfo=.
 - =py3/setup.py=, =py3/pypiProc.sh= --- PyPI packaging (setup.py is dblock-driven; do not hand-edit).
 
 * Part of BISOS — ByStar Internet Services Operating System

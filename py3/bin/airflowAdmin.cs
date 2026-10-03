@@ -90,31 +90,15 @@ from bisos.common import csParam
 import collections
 ####+END:
 
+# The facts of the installation --- AIRFLOW_HOME, account, binary, fqdn, port, and the
+# CLI prefix for by-hand invocations --- come from bisos.airflow.airflowInfo, the one
+# source the sbom, the units, dns and vhost read too. Deliberately not
+# pathlib.Path.home()/"airflow": the services run as the airflow account, so the
+# invoker's home would report whoever happens to run this CS.
 import pathlib
 
-from bisos.banna import tcpPorts as bannaTcpPorts
-
-_airflowFqdn = "airflow.here"
-# AIRFLOW_HOME of the systemd-managed installation, matching what
-# airflow-sbom.pcs writes to /etc/default/airflow and what the airflow-*.service
-# units read via EnvironmentFile. Deliberately NOT pathlib.Path.home()/"airflow":
-# the services run as User=airflow, so resolving the invoker's home would report
-# whoever happens to run this CS rather than the installation being administered.
-_airflowHome = pathlib.Path("/opt/airflow")
-_airflowDagsDir = _airflowHome / "dags"
-_airflowLogsDir = _airflowHome / "logs"
-_airflowUser = "airflow"
-_airflowBin = "/bisos/venv/py3/asc/bin/airflow"
-
-# Prefix for every by-hand CLI invocation. Both halves matter:
-#   sudo -u airflow  -- AIRFLOW_HOME and the SQLite metadata DB are airflow-owned;
-#                       running the CLI as root leaves root-owned -wal/-shm files
-#                       the services then cannot write.
-#   env AIRFLOW_HOME -- /etc/default/airflow is an EnvironmentFile read by systemd,
-#                       NOT by an interactive shell. Without this the CLI silently
-#                       operates on ~airflow/airflow and reports an empty install.
-_airflowCli = f"sudo -u {_airflowUser} env AIRFLOW_HOME={_airflowHome} {_airflowBin}"
-_airflowPortNu = bannaTcpPorts.tcpPortsAssignedList.tcpPortsList['airflow'].portNu
+from bisos.basics import pyRunAs
+from bisos.airflow.airflowInfo import airflowInfo, envFileDrift, unitDrift
 
 """ #+begin_org
 *  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  CsFrmWrk   [[elisp:(outline-show-subtree+toggle)][||]] ~csuList emacs-list Specifications~  [[elisp:(blee:org:code-block/above-run)][ /Eval Below/ ]] [[elisp:(org-cycle)][| ]]
@@ -203,6 +187,9 @@ class examples(cs.Cmnd):
         cs.examples.menuChapter('=Airflow.Here -- Users=')
         cmnd('usersInfo', comment=" # SimpleAuthManager: where users and passwords live")
 
+        cs.examples.menuChapter('=Airflow.Here -- Do Installation And Code Agree?=')
+        cmnd('driftCheck', comment=" # read-only: live env file and units against bisos.airflow.airflowInfo")
+
         cs.examples.menuChapter('=Full Overview=')
         cmnd('fullUpdate', comment=" # Show hostInfo + servicesInfo + dagsInfo + usersInfo")
 
@@ -276,19 +263,19 @@ class hostInfo(cs.Cmnd):
         literal = cs.examples.execInsert
 
         cs.examples.menuSection('/Host/')
-        literal(f"echo {_airflowFqdn}   # fqdn -- see py3/bin/airflow-here-dns.pcs")
-        literal(f"echo {_airflowPortNu}   # webserver/api-server port -- see bisos.banna tcpPorts")
-        literal(f"http://{_airflowFqdn}   # web UI -- open in a browser")
+        literal(f"echo {airflowInfo.fqdn}   # fqdn -- see py3/bin/airflow-here-dns.pcs")
+        literal(f"echo {airflowInfo.portNu}   # webserver/api-server port -- see bisos.banna tcpPorts")
+        literal(f"http://{airflowInfo.fqdn}   # web UI -- open in a browser")
 
         cs.examples.menuSection('/AIRFLOW_HOME/')
-        literal(f"echo {_airflowHome}")
+        literal(f"echo {airflowInfo.home}")
 
         cs.examples.menuSection('/DAG files -- input DAGs directory for this installation/')
-        literal(f"echo {_airflowDagsDir}   # AIRFLOW_HOME/dags -- drop .py DAG files here")
-        literal(f"ls -la {_airflowDagsDir}")
+        literal(f"echo {airflowInfo.dagsDir}   # AIRFLOW_HOME/dags -- drop .py DAG files here")
+        literal(f"ls -la {airflowInfo.dagsDir}")
 
         cs.examples.menuSection('/Logs/')
-        literal(f"ls -la {_airflowLogsDir}")
+        literal(f"ls -la {airflowInfo.logsDir}")
         literal("journalctl -u airflow-webserver.service -f")
         literal("journalctl -u airflow-scheduler.service -f")
         literal("journalctl -u airflow-triggerer.service -f")
@@ -379,11 +366,11 @@ class usersInfo(cs.Cmnd):
         #+end_org """): return(cmndOutcome)
 
         literal = cs.examples.execInsert
-        _pwFile = _airflowHome / "simple_auth_manager_passwords.json.generated"
+        _pwFile = airflowInfo.home / "simple_auth_manager_passwords.json.generated"
 
         cs.examples.menuSection('/Who The Users Are -- declared in config, not a DB/')
-        literal(f"{_airflowCli} config get-value core auth_manager")
-        literal(f"{_airflowCli} config get-value core simple_auth_manager_users"
+        literal(f"{airflowInfo.cliPrefix} config get-value core auth_manager")
+        literal(f"{airflowInfo.cliPrefix} config get-value core simple_auth_manager_users"
                 "   # username:role pairs -- NOT passwords")
 
         cs.examples.menuSection('/Current Password/')
@@ -394,8 +381,8 @@ class usersInfo(cs.Cmnd):
         # SimpleAuthManager only fills in users MISSING from this file (see
         # simple_auth_manager.py, "if user.username not in passwords"), so a
         # hand-written entry survives restarts rather than being regenerated.
-        literal(f"""echo '{{"admin": "airflow"}}' | sudo -u {_airflowUser} tee {_pwFile}""")
-        literal(f"sudo -u {_airflowUser} chmod 600 {_pwFile}")
+        literal(f"""echo '{{"admin": "airflow"}}' | sudo -u {airflowInfo.acctName} tee {_pwFile}""")
+        literal(f"sudo -u {airflowInfo.acctName} chmod 600 {_pwFile}")
         literal("sudo systemctl restart airflow-webserver   # required, re-reads the file")
 
         cs.examples.menuSection('/Caution/')
@@ -430,7 +417,7 @@ class dagsInfo(cs.Cmnd):
 ** [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Listing, triggering and inspecting DAGs from the CLI.
 
         Every invocation is prefixed with ``sudo -u airflow env AIRFLOW_HOME=...``
-        -- see the _airflowCli comment near the top of this file for why both
+        -- see airflowInfo.cliPrefix in bisos.airflow for why both
         halves are required.
         #+end_org """): return(cmndOutcome)
 
@@ -438,39 +425,98 @@ class dagsInfo(cs.Cmnd):
         _dag = "<dag_id>"
 
         cs.examples.menuSection('/What Is Registered/')
-        literal(f"{_airflowCli} dags list")
-        literal(f"{_airflowCli} dags list-import-errors   # empty output is good")
-        literal(f"{_airflowCli} dags list-runs {_dag}     # dag_id is POSITIONAL, not -d")
+        literal(f"{airflowInfo.cliPrefix} dags list")
+        literal(f"{airflowInfo.cliPrefix} dags list-import-errors   # empty output is good")
+        literal(f"{airflowInfo.cliPrefix} dags list-runs {_dag}     # dag_id is POSITIONAL, not -d")
 
         cs.examples.menuSection('/Trigger A Run At Will/')
-        literal(f"{_airflowCli} dags trigger {_dag}")
-        literal(f"{_airflowCli} dags trigger {_dag} -r <run-id>   # label it, e.g. by config under test")
+        literal(f"{airflowInfo.cliPrefix} dags trigger {_dag}")
+        literal(f"{airflowInfo.cliPrefix} dags trigger {_dag} -r <run-id>   # label it, e.g. by config under test")
         literal("# A manual trigger QUEUES rather than starts when max_active_runs=1")
         literal("# and a scheduled run is already active.")
 
         cs.examples.menuSection('/Pause and Unpause/')
-        literal(f"{_airflowCli} dags pause {_dag}")
-        literal(f"{_airflowCli} dags unpause {_dag}")
+        literal(f"{airflowInfo.cliPrefix} dags pause {_dag}")
+        literal(f"{airflowInfo.cliPrefix} dags unpause {_dag}")
         literal("# New DAGs land PAUSED. Nothing runs until unpaused.")
 
         cs.examples.menuSection('/Tasks Of A DAG/')
-        literal(f"{_airflowCli} tasks list {_dag}")
-        literal(f"{_airflowCli} tasks states-for-dag-run {_dag} <run_id>")
-        literal(f"{_airflowCli} tasks test {_dag} <task_id>"
+        literal(f"{airflowInfo.cliPrefix} tasks list {_dag}")
+        literal(f"{airflowInfo.cliPrefix} tasks states-for-dag-run {_dag} <run_id>")
+        literal(f"{airflowInfo.cliPrefix} tasks test {_dag} <task_id>"
                 "   # run ONE task now, no scheduling, no unpause needed")
 
         cs.examples.menuSection('/Graphical Dependencies/')
-        literal("# The web UI Graph view is the usual answer: http://" + _airflowFqdn)
-        literal(f"{_airflowCli} dags show {_dag}                  # needs the graphviz pip pkg")
-        literal(f"{_airflowCli} dags show {_dag} --save /tmp/{_dag}.png")
+        literal("# The web UI Graph view is the usual answer: http://" + airflowInfo.fqdn)
+        literal(f"{airflowInfo.cliPrefix} dags show {_dag}                  # needs the graphviz pip pkg")
+        literal(f"{airflowInfo.cliPrefix} dags show {_dag} --save /tmp/{_dag}.png")
 
         cs.examples.menuSection('/Health Of The Parsing Layer/')
         # Airflow 3 parses DAG files in a standalone dag-processor, not in the
         # scheduler. With it absent every unit looks healthy, the UI serves, and
         # no DAG is ever registered -- this is the check that distinguishes that
         # case from a working install.
-        literal(f"{_airflowCli} jobs check --job-type DagProcessorJob")
-        literal(f"{_airflowCli} jobs check --job-type SchedulerJob")
+        literal(f"{airflowInfo.cliPrefix} jobs check --job-type DagProcessorJob")
+        literal(f"{airflowInfo.cliPrefix} jobs check --job-type SchedulerJob")
+
+        return cmndOutcome
+
+
+####+BEGIN: b:py3:cs:cmnd/classHead :cmndName "driftCheck" :comment "" :extent "verify" :ro "cli" :parsMand "" :parsOpt "" :argsMin 0 :argsMax 0 :pyInv ""
+""" #+begin_org
+*  _[[elisp:(blee:menu-sel:outline:popupMenu)][±]]_ _[[elisp:(blee:menu-sel:navigation:popupMenu)][Ξ]]_ [[elisp:(outline-show-branches+toggle)][|=]] [[elisp:(bx:orgm:indirectBufOther)][|>]] *[[elisp:(blee:ppmm:org-mode-toggle)][|N]]*  CmndSvc-   [[elisp:(outline-show-subtree+toggle)][||]] <<driftCheck>>  =verify= ro=cli   [[elisp:(org-cycle)][| ]]
+#+end_org """
+class driftCheck(cs.Cmnd):
+    cmndParamsMandatory = [ ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @cs.track(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+             rtInv: cs.RtInvoker,
+             cmndOutcome: b.op.Outcome,
+    ) -> b.op.Outcome:
+
+        failed = b_io.eh.badOutcome
+        callParamsDict = {}
+        if self.invocationValidate(rtInv, cmndOutcome, callParamsDict, None).isProblematic():
+            return failed(cmndOutcome)
+####+END:
+        if self.cmndDocStr(f""" #+begin_org
+** [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Compare the live installation with bisos.airflow.airflowInfo. Read-only.
+        #+end_org """): return(cmndOutcome)
+
+        # /etc/default/airflow is root:airflow 640, so it is read as root. Nothing is written.
+        # It is written only when absent: hand overrides are legitimate, and generator lines
+        # added later never reach existing hosts. "missing" is therefore a finding, not an error.
+        envFile = airflowInfo.envFile
+        print(f"* {envFile}")
+        envText = pyRunAs.as_root_readFromFile(envFile)
+        if not envText:
+            print(f"  cannot read {envFile}")
+        else:
+            drift = envFileDrift(envText)
+            for key in drift["missing"]:
+                print(f"  missing  {key}   (generator has it, live file does not)")
+            for key, expected, live in drift["differs"]:
+                print(f"  differs  {key}   expected={expected}   live={live}")
+            for key in drift["extra"]:
+                print(f"  extra    {key}   (not generated -- a hand addition)")
+            if not (drift["missing"] or drift["differs"] or drift["extra"]):
+                print("  agrees with the generator")
+
+        for unitName in ("db", "webserver", "scheduler", "triggerer", "dag-processor"):
+            unitPath = pathlib.Path(f"/etc/systemd/system/airflow-{unitName}.service")
+            print(f"* {unitPath}")
+            if not unitPath.exists():
+                print("  not installed")
+                continue
+            lacking = unitDrift(unitPath.read_text())
+            if lacking:
+                for line in lacking:
+                    print(f"  missing  {line}")
+            else:
+                print("  identity lines agree (User, Group, EnvironmentFile)")
 
         return cmndOutcome
 

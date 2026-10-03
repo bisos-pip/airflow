@@ -17,9 +17,7 @@ from bisos.debian import systemd_seedInfo
 from bisos.debian import systemd_seed as systemd_seed  # noqa
 
 from bisos.basics import pathPlus
-from bisos.banna import tcpPorts as bannaTcpPorts
-
-_portNu = bannaTcpPorts.tcpPortsAssignedList.tcpPortsList['airflow'].portNu
+from bisos.airflow.airflowInfo import airflowInfo, sysdServiceLines
 
 def sysdUnitFileFunc() -> str | None:
     """Produce the unit file as a string."""
@@ -34,10 +32,7 @@ After=network.target airflow-db.service
 Requires=airflow-db.service
 
 [Service]
-User=airflow
-Group=airflow
-EnvironmentFile=/etc/default/airflow
-ExecStart={execPath} api-server --port {_portNu}
+{sysdServiceLines()}ExecStart={execPath} api-server --port {airflowInfo.portNu}
 Restart=on-failure
 RestartSec=10
 

@@ -12,10 +12,11 @@ from bisos.csSeed import seedsLib
 from bisos.dnsCap import dnsCap_seed #  noqa: F401  # type: ignore[unused-import] _atExit_
 
 from bisos.dnsCap import dnsCap_seedInfo
+from bisos.airflow.airflowInfo import airflowInfo
 cntrlInfo = dnsCap_seedInfo.cmndsControlInfo
 
 cntrlInfo.dnsSpecMethod = dnsCap_seedInfo.DnsSpecMethod.etcHosts   # Other choice is tinydns
-cntrlInfo.fqdn = "airflow.here"
+cntrlInfo.fqdn = airflowInfo.fqdn
 
 from bisos.csSeed import csCmndsList_seedInfo
 csCmnd = csCmndsList_seedInfo.csCmnd
